@@ -37,7 +37,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middlewares
-app.use(express.static("../front-end/public/pages"));
+app.use(express.static("public_html/pages"));
 app.use(express.json());
 
 // Configuração da AWS
@@ -80,12 +80,12 @@ app.get('/s3url', (req, res) => {
 
 // Home route
 app.get('/', (req, res) => {
-  res.sendFile("index.html", { root: "../front-end/public/pages" });
+  res.sendFile("index.html", { root: "public_html/pages" });
 });
 
 // Signup
 app.get('/signup', (req, res) => {
-  res.sendFile("register.html", { root: "../front-end/public/pages" });
+  res.sendFile("register.html", { root: "public_html/pages" });
 });
 
 app.post('/signup', (req, res) => {
@@ -132,12 +132,12 @@ app.post('/signup', (req, res) => {
 });
 // Category
 app.get('/Category', (req, res) => {
-  res.sendFile("category.html", { root: "../front-end/public/pages" });
+  res.sendFile("category.html", { root: "public_html/pages" });
 });
 
 // Login
 app.get('/login', (req, res) => {
-  res.sendFile("login.html", { root: "../front-end/public/pages" });
+  res.sendFile("login.html", { root: "public_html/pages" });
 });
 
 app.post('/login', (req, res) => {
@@ -173,7 +173,7 @@ app.post('/login', (req, res) => {
 
 // Rota para vendedores
 app.get('/seller', (req, res) => {
-  res.sendFile('seller.html', { root: "../front-end/public/pages" });
+  res.sendFile('seller.html', { root: "public_html/pages" });
 });
 
 app.post('/seller', (req, res) => {
@@ -199,16 +199,16 @@ app.post('/seller', (req, res) => {
 
 // Dashboard
 app.get('/dashboard', (req, res) => {
-  res.sendFile('dashboard.html', { root: "../front-end/public/pages" });
+  res.sendFile('dashboard.html', { root: "public_html/pages" });
 });
 
 // Adicionar produto
 app.get('/add-product', (req, res) => {
-  res.sendFile('add-product.html', { root: "../front-end/public/pages" });
+  res.sendFile('add-product.html', { root: "public_html/pages"});
 });
 
 app.get('/add-product/:id', (req, res) => {
-  res.sendFile('add-product.html', { root: "../front-end/public/pages" });
+  res.sendFile('add-product.html', { root: "public_html/pages"});
 });
 // Funções para calcular badges
 const isNewProduct = (createdDate) => {
@@ -351,12 +351,12 @@ app.post('/get-products', (req, res) => {
 
 // Rota para produtos
 app.get('/products/:id', (req, res) => {
-res.sendFile("product.html", { root: "../front-end/public/pages" });
+res.sendFile("product.html", { root: "public_html/pages" });
 });
 
 // Rota de busca
 app.get('/search/:key', (req, res) => {
-res.sendFile("search.html", { root: "../front-end/public/pages" });
+res.sendFile("search.html", { root: "public_html/pages" });
 });
 
 // Rota para deletar produtos
@@ -440,11 +440,11 @@ getDocs(query(reviews, where("product", "==", product)), limit(4))
 
 
 app.get('/cart', (req, res) => {
-  res.sendFile("cart.html", { root : "../front-end/public/pages" })
+  res.sendFile("cart.html", { root :"public_html/pages" })
 })
 
 app.get('/checkout', (req, res) => {
-  res.sendFile("checkout.html", { root : "../front-end/public/pages" })
+  res.sendFile("checkout.html", { root : "public_html/pages"})
 })
 
 const googleMapsClient = new Client({});
@@ -534,7 +534,7 @@ app.get('/success', (req, res) => {
 });
 // Rota 404
 app.get('/404', (req, res) => {
-  res.sendFile("404.html", { root: "../front-end/public/pages" });
+  res.sendFile("404.html", { root: "public_html/pages" });
 });
 
 // Rota padrão para 404
