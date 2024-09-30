@@ -31,7 +31,7 @@ const port = process.env.PORT || 3000;
 
 // Configuração do CORS
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'https://bichinhosousados.com/',
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Adicione os métodos necessários
   optionsSuccessStatus: 200
 };
