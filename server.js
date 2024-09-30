@@ -31,7 +31,8 @@ const port = process.env.PORT || 3000;
 
 // Configuração do CORS
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Para desenvolvimento local
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Adicione os métodos necessários
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
