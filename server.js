@@ -134,13 +134,13 @@ app.post('/signup', (req, res) => {
   }
 });
 // Category
-app.get('/Category', (req, res) => {
-  res.sendFile("category.html", { root: "public_html" });
+app.get('/category', (req, res) => {
+  res.status(200).json({ message: 'Rota Category válida' });
 });
 
 // Login
 app.get('/login', (req, res) => {
-  res.sendFile("login.html", { root: "public_html" });
+  res.status(200).json({ message: 'Rota Login válida' });
 });
 
 app.post('/login', (req, res) => {
@@ -202,9 +202,8 @@ app.post('/seller', (req, res) => {
 
 // Dashboard
 app.get('/dashboard', (req, res) => {
-  res.sendFile('dashboard.html', { root: "public_html" });
+  res.status(200).json({ message: 'Rota Dashboard válida' });
 });
-
 // Adicionar produto
 app.get('/add-product', (req, res) => {
   res.sendFile('add-product.html', { root: "public_html"});
