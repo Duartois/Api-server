@@ -31,7 +31,7 @@ const port = process.env.PORT || 3000;
 
 // Configuração do CORS
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'https://bichinhosousados.com',
+  origin: 'https://bichinhosousados.com', // Teste com URL direta
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   optionsSuccessStatus: 200
 };
@@ -75,8 +75,11 @@ async function generateURL() {
 
 // Rota para obter a URL do S3
 app.get('/s3url', (req, res) => {
-  generateURL().then(url => res.json(url));
+  generateURL()
+    .then(url => res.json({ url })) // Colocando em um objeto JSON
+    .catch(err => res.status(500).json({ error: 'Falha ao gerar URL' })); // Tratamento de erro
 });
+
 
 // Home route
 app.get('/', (req, res) => {
