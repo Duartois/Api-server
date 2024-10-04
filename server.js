@@ -498,19 +498,18 @@ app.post('/stripe-checkout', async (req, res) => {
 
       // Preparando os itens para a sessão de checkout do Stripe
       const lineItems = items.map(item => {
-          console.log('Preparando item para checkout:', item); // Log do item atual
-          return {
-              price_data: {
-                  currency: 'brl',
-                  product_data: {
-                      name: item.price_data.product_data.name,
-                      images: item.price_data.product_data.images || [],  // Certifique-se de que cada item tenha uma URL de imagem
-                  },
-                  unit_amount: item.price_data.unit_amount, // Preço em centavos
+      return {
+          price_data: {
+            currency: 'brl',
+            product_data: {
+                name: item.price_data.product_data.name,
+                images: item.price_data.product_data.images || [],  // Certifique-se de que tenha imagens
               },
-              quantity: item.quantity,
-          };
-      });
+              unit_amount: item.price_data.unit_amount, // Preço em centavos
+          },
+          quantity: item.quantity,
+      };
+  });
 
       console.log('Line items preparados:', lineItems); // Log dos line items
 
