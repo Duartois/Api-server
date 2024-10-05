@@ -88,7 +88,7 @@ app.get('/', (req, res) => {
 
 // Signup
 app.get('/signup', (req, res) => {
-  res.sendFile('signup.html', { root: 'public_html' }); // Modificar para o caminho correto do seu arquivo HTML
+  res.sendFile('register.html', { root: 'public_html' }); // Modificar para o caminho correto do seu arquivo HTML
 });
 
 
