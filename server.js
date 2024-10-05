@@ -58,7 +58,8 @@ const s3Client = new S3Client({
 // Função para gerar a URL da imagem
 async function generateURL() {
   let date = new Date();
-  const imageName = `${date.getTime()}.jpeg`;
+  const imageName = `${date.getTime()}.${file.type.split("/")[1]}`; 
+// Isso vai gerar uma extensão baseada no tipo de arquivo
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
