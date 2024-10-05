@@ -88,7 +88,7 @@ app.get('/', (req, res) => {
 
 // Signup
 app.get('/signup', (req, res) => {
-  res.sendFile("register.html", { root: "public_html" });
+  res.status(200).json({ message: 'Rota signup válida' });
 });
 
 app.post('/signup', (req, res) => {
