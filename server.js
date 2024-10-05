@@ -75,9 +75,9 @@ async function generateURL() {
 
 // Rota para obter a URL do S3
 app.get('/s3url', (req, res) => {
-  generateURL()
-    .then(url => res.json({ url })) // Colocando em um objeto JSON
-    .catch(err => res.status(500).json({ error: 'Falha ao gerar URL' })); // Tratamento de erro
+    generateURL()
+        .then(url => res.json({ url })) // URL deve ser acessível como res.data.url
+        .catch(err => res.status(500).json({ error: 'Falha ao gerar URL' }));
 });
 
 
