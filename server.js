@@ -87,8 +87,8 @@ app.get('/', (req, res) => {
 });
 
 // Signup
-app.get('/signup', (req, res) => {
-  res.sendFile('register.html', { root: 'public_html' }); // Modificar para o caminho correto do seu arquivo HTML
+app.get('/register', (req, res) => {
+  res.status(200).json({ message: 'Rota Register válida' });
 });
 
 
