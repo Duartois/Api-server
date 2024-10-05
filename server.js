@@ -92,7 +92,7 @@ app.get('/register', (req, res) => {
 });
 
 
-app.post('/signup', (req, res) => {
+app.post('/register', (req, res) => {
   const { name, email, password, number, tac } = req.body;
 
   // Validações do formulário
@@ -183,21 +183,28 @@ app.get('/seller', (req, res) => {
 app.post('/seller', (req, res) => {
   let { name, address, about, number, email } = req.body;
 
-  if (!name.length || !address.length || !about.length || number.length < 10 || !Number(number)) {
-    return res.json({ 'alert': 'Informações Incorretas' });
+  // Validação dos dados recebidos
+  if (!name.length || !address.length || !about.length || number.length < 10 || isNaN(number)) {
+    return res.status(400).json({ 'alert': 'Informações Incorretas' }); // Resposta 400 para dados incorretos
   } else {
     // Atualizar o status do vendedor
     const sellers = collection(db, "sellers");
     setDoc(doc(sellers, email), req.body)
-      .then(data => {
+      .then(() => {
         const users = collection(db, "users");
-        updateDoc(doc(users, email), {
-          seller: true
-        })
-          .then(data => {
-            res.json({ 'seller': true });
+        updateDoc(doc(users, email), { seller: true })
+          .then(() => {
+            res.json({ 'seller': true }); // Retorno de sucesso
+          })
+          .catch(error => {
+            console.error('Erro ao atualizar usuário:', error); // Log do erro
+            res.status(500).json({ 'alert': 'Erro ao atualizar o status do vendedor.' }); // Resposta de erro 500
           });
-      });c
+      })
+      .catch(error => {
+        console.error('Erro ao adicionar vendedor:', error); // Log do erro
+        res.status(500).json({ 'alert': 'Erro ao adicionar o vendedor.' }); // Resposta de erro 500
+      });
   }
 });
 
