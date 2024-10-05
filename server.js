@@ -88,8 +88,9 @@ app.get('/', (req, res) => {
 
 // Signup
 app.get('/signup', (req, res) => {
-  res.status(200).json({ message: 'Rota signup válida' });
+  res.sendFile('signup.html', { root: 'public_html' }); // Modificar para o caminho correto do seu arquivo HTML
 });
+
 
 app.post('/signup', (req, res) => {
   const { name, email, password, number, tac } = req.body;
