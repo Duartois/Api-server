@@ -307,19 +307,12 @@ const pluralize = (word) => {
 };
 
 app.post('/get-products', (req, res) => {
-  let { email, id, tag, badge } = req.body;
-
-  console.log('Received get-products request with:');
-  console.log('Email:', email);
-  console.log('ID:', id);
-  console.log('Tag:', tag);
-  console.log('Badge:', badge);
+  let { id, tag, badge } = req.body;
 
   let products = collection(db, "products");
   let queryRef;
 
   if (badge) {
-    // Filtrar produtos com base no badge
     queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
   } else if (id) {
     queryRef = getDoc(doc(products, id));
@@ -327,34 +320,26 @@ app.post('/get-products', (req, res) => {
     const tagVariants = generateTagVariants(tag);
     queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
   } else {
-    queryRef = getDocs(query(products, where("email", "==", email)));
+    queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por e-mail
   }
 
   queryRef
-      .then(productsSnapshot => {
-          if (productsSnapshot.exists) {
-              // Handle single product
-              console.log('Product found:', productsSnapshot.data());
-              return res.json(productsSnapshot.data());
-          } else if (!productsSnapshot.empty) {
-              // Handle multiple products
-              let productArr = [];
-              productsSnapshot.forEach(item => {
-                  let data = item.data();
-                  data.id = item.id;
-                  productArr.push(data);
-              });
-              console.log('Products found:', productArr);
-              return res.json(productArr);
-          } else {
-              console.log('No products found');
-              return res.json([]); // Return an empty array if no products are found
-          }
-      })
-      .catch(error => {
-          console.error('Error fetching products:', error);
-          res.status(500).json({ error: 'Internal server error' });
-      });
+    .then(productsSnapshot => {
+      let productArr = [];
+      if (!productsSnapshot.empty) {
+        productsSnapshot.forEach(item => {
+          let data = item.data();
+          data.id = item.id;
+          productArr.push(data);
+        });
+        res.json(productArr);
+      } else {
+        res.json('no products');
+      }
+    })
+    .catch(error => {
+      res.status(500).json({ error: 'Internal server error' });
+    });
 });
 
 
