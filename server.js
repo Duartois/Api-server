@@ -68,6 +68,10 @@ async function generateURL(fileType) {
         ContentType: fileType
     });
 
+console.log('URL de upload gerada:', uploadURL);
+console.log('Nome do arquivo:', imageName);
+console.log('File Type:', fileType);
+
     try {
         const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 300 });
         console.log('URL de upload gerada:', uploadURL); // Log da URL gerada
