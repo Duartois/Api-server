@@ -57,18 +57,25 @@ const s3Client = new S3Client({
 
 // Função para gerar a URL da imagem
 async function generateURL(fileType) {
+    console.log('Tipo de arquivo recebido:', fileType); // Log do tipo de arquivo
     let date = new Date();
-    const imageName = `${date.getTime()}.${fileType.split("/")[1]}`; // Gera o nome da imagem
-    console.log('Nome da imagem gerada:', imageName); // Log para depuração
+    const imageName = `${date.getTime()}.${fileType.split("/")[1]}`;
+    console.log('Nome da imagem gerada:', imageName);
 
     const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: imageName,
-        ContentType: fileType // Aqui você configura o Content-Type
+        ContentType: fileType
     });
 
-    const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 300 });
-    return uploadURL;
+    try {
+        const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+        console.log('URL de upload gerada:', uploadURL); // Log da URL gerada
+        return uploadURL;
+    } catch (err) {
+        console.error('Erro ao gerar URL de upload:', err); // Log de erro
+        throw new Error('Erro ao gerar URL de upload');
+    }
 }
 
 
