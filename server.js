@@ -59,6 +59,7 @@ const s3Client = new S3Client({
 async function generateURL(fileType) {
     let date = new Date();
     const imageName = `${date.getTime()}.${fileType.split("/")[1]}`; // Gera o nome da imagem
+    console.log('Nome da imagem gerada:', imageName); // Log para depuração
 
     const command = new PutObjectCommand({
         Bucket: bucketName,
@@ -71,10 +72,6 @@ async function generateURL(fileType) {
 }
 
 
-
-
-
-
 // Rota para obter a URL do S3
 app.get('/s3url', (req, res) => {
     const fileType = req.query.fileType; // Obtém o tipo de arquivo da query string
@@ -82,9 +79,6 @@ app.get('/s3url', (req, res) => {
         .then(url => res.json({ url })) // Retorna a URL para o cliente
         .catch(err => res.status(500).json({ error: 'Falha ao gerar URL' }));
 });
-
-
-
 
 // Home route
 app.get('/', (req, res) => {
