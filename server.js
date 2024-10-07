@@ -86,9 +86,13 @@ async function generateURL(fileType) {
 // Rota para obter a URL do S3
 app.get('/s3url', (req, res) => {
     const fileType = req.query.fileType; // Obtém o tipo de arquivo da query string
+    console.log('Tipo de arquivo solicitado:', fileType); // Log para depuração
     generateURL(fileType)
-        .then(url => res.json({ url })) // Retorna a URL para o cliente
-        .catch(err => res.status(500).json({ error: 'Falha ao gerar URL' }));
+        .then(url => res.json({ url }))
+        .catch(err => {
+            console.error('Erro ao gerar URL:', err); // Log do erro
+            res.status(500).json({ error: 'Falha ao gerar URL' });
+        });
 });
 
 // Home route
