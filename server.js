@@ -61,6 +61,8 @@ async function generateURL(fileType) {
     let date = new Date();
     const imageName = `${date.getTime()}.${fileType.split("/")[1]}`;
     console.log('Nome da imagem gerada:', imageName);
+  console.log('Requisição recebida para gerar a URL:', fileType);
+
 
     const command = new PutObjectCommand({
         Bucket: bucketName,
