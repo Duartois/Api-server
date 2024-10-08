@@ -45,16 +45,26 @@ const region = "sa-east-1";
 const bucketName = "site-fullstack";
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const metadata = {'x-amz-content-sha256': 'UNSIGNED-PAYLOAD'};
 
 // Inicialize o S3Client
 const s3Client = new S3Client({
   region,
+  metadata,
   credentials: {
     accessKeyId,
     secretAccessKey
   }
 });
 
+// Teste para listar os buckets
+s3Client.listBuckets((err, data) => {
+  if (err) {
+    console.log('Erro ao acessar o S3:', err.message);
+  } else {
+    console.log('Buckets disponíveis:', data.Buckets);
+  }
+});
 // Função para gerar a URL da imagem
 async function generateURL(fileType) {
     console.log('Tipo de arquivo recebido:', fileType);
