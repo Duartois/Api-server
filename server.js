@@ -57,48 +57,24 @@ const s3Client = new S3Client({
 });
 
 // Função para gerar a URL da imagem
-async function generateURL(file) {
-    console.log('Tipo de arquivo recebido:', file.type);
-    
-    // Obter o nome da imagem com base na data atual
+async function generateURL(fileType) {
+    console.log('Tipo de arquivo recebido:', fileType);
     let date = new Date();
-    const imageName = `${date.getTime()}.${file.name.split('.').pop()}`; // Utiliza a extensão do arquivo original
-
-    // Cria um comando para o S3
+    const imageName = ${date.getTime()}.${fileType.split("/")[1]};
+    
     const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: imageName,
-        ContentType: file.type
+        ContentType: fileType
     });
 
     try {
-        // Gera a URL assinada
         const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 300 });
         console.log('URL de upload gerada:', uploadURL);
-        
-        // Realiza o upload do arquivo usando a URL assinada
-        await uploadFileToS3(uploadURL, file);
-        
-        return uploadURL; // Retorna a URL assinada, se necessário
+        return uploadURL;
     } catch (err) {
         console.error('Erro ao gerar URL de upload:', err); // Captura do erro
         throw new Error('Erro ao gerar URL de upload');
-    }
-}
-
-// Função para fazer o upload do arquivo usando a URL assinada
-async function uploadFileToS3(signedUrl, file) {
-    try {
-        // Faz o upload do arquivo
-        await axios.put(signedUrl, file, {
-            headers: {
-                'Content-Type': file.type // Define o tipo de conteúdo
-            }
-        });
-        console.log('Arquivo enviado com sucesso');
-    } catch (error) {
-        console.error('Erro ao fazer upload do arquivo:', error);
-        throw new Error('Erro ao fazer upload do arquivo');
     }
 }
 
