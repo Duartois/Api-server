@@ -366,16 +366,22 @@ res.sendFile("search.html", { root: "public_html" });
 });
 
 // Rota para deletar produtos
-app.post('/delete-product', (req, res) => {
-  const { id } = req.body;
+app.post('/delete-product', async (req, res) => {
+    const { id } = req.body;
 
-  const products = collection(db, "products");
+    if (!id) {
+        return res.status(400).json({ error: 'ID do produto é necessário.' });
+    }
 
-  deleteDoc(doc(products, id)).then(() => {
-    res.json('success');
-  }).catch((error) => {
-    res.status(500).json({ error: error.message });
-  });
+    const products = collection(db, "products");
+
+    try {
+        await deleteDoc(doc(products, id));
+        return res.json('success');
+    } catch (error) {
+        console.error('Erro ao deletar o produto:', error);
+        return res.status(500).json({ error: error.message });
+    }
 });
 app.post('/add-review', (req, res) => {
   let { headline, review, rate, email, product } = req.body;
