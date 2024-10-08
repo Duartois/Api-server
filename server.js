@@ -33,6 +33,7 @@ const port = process.env.PORT || 3000;
 const corsOptions = {
   origin: ['https://bichinhosousados.com', 'http://localhost:3000'], // Teste com URL direta
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
