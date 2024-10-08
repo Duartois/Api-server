@@ -357,8 +357,18 @@ app.post('/get-products', (req, res) => {
 
 // Rota para produtos
 app.get('/products/:id', (req, res) => {
-res.sendFile("product.html", { root: "public_html" });
+    const productId = req.params.id;
+    
+    // Aqui você deve buscar o produto no banco de dados ou na fonte de dados
+    const product = getProductById(productId); // Suponha que você tenha uma função que busca o produto pelo ID
+    
+    if (product) {
+        res.json(product); // Retorna o produto como JSON
+    } else {
+        res.status(404).json({ message: 'Produto não encontrado' }); // Retorna erro se o produto não for encontrado
+    }
 });
+
 
 // Rota de busca
 app.get('/search/:key', (req, res) => {
