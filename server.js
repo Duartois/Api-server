@@ -45,12 +45,10 @@ const region = "sa-east-1";
 const bucketName = "site-fullstack";
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-const metadata = {'x-amz-content-sha256': 'UNSIGNED-PAYLOAD'};
 
 // Inicialize o S3Client
 const s3Client = new S3Client({
   region,
-  metadata,
   credentials: {
     accessKeyId,
     secretAccessKey
