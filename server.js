@@ -60,7 +60,7 @@ const s3Client = new S3Client({
 async function generateURL(fileType) {
     console.log('Tipo de arquivo recebido:', fileType);
     let date = new Date();
-    const imageName = ${date.getTime()}.${fileType.split("/")[1]};
+    const imageName = `${date.getTime()}.${fileType.split("/")[1]}`;
     
     const command = new PutObjectCommand({
         Bucket: bucketName,
@@ -77,6 +77,7 @@ async function generateURL(fileType) {
         throw new Error('Erro ao gerar URL de upload');
     }
 }
+
 
 
 // Rota para obter a URL do S3
