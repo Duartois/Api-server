@@ -56,14 +56,6 @@ const s3Client = new S3Client({
   }
 });
 
-// Teste para listar os buckets
-s3Client.listBuckets((err, data) => {
-  if (err) {
-    console.log('Erro ao acessar o S3:', err.message);
-  } else {
-    console.log('Buckets disponíveis:', data.Buckets);
-  }
-});
 // Função para gerar a URL da imagem
 async function generateURL(fileType) {
     console.log('Tipo de arquivo recebido:', fileType);
