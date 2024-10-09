@@ -374,6 +374,7 @@ app.post('/get-products', (req, res) => {
 app.get('/products/:id', async (req, res) => {
   const productId = req.params.id;
   const products = collection(db, "products");
+console.log("ID do produto:", productId);
 
   try {
     const productDoc = await getDoc(doc(products, productId));
@@ -388,6 +389,7 @@ app.get('/products/:id', async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar produto" });
   }
 });
+
 
 
 // Rota de busca
