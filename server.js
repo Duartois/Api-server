@@ -61,7 +61,7 @@ async function generateURL(fileType) {
     console.log('Tipo de arquivo recebido:', fileType);
     let date = new Date();
     const imageName = `${date.getTime()}.${fileType.split("/")[1]}`;
-    
+
     const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: imageName,
@@ -228,24 +228,9 @@ app.get('/add-product', (req, res) => {
   res.sendFile('add-product.html', { root: "public_html"});
 });
 
-app.get('/add-product/:id', async (req, res) => {
-  const productId = req.params.id; // Obtém o ID do produto da URL
-  const products = collection(db, "products");
-
-  try {
-    const productDoc = await getDoc(doc(products, productId));
-
-    if (productDoc.exists()) {
-      const productData = productDoc.data();
-      res.json(productData); // Envia os dados do produto para o frontend
-    } else {
-      res.status(404).json({ error: "Produto não encontrado" });
-    }
-  } catch (error) {
-    res.status(500).json({ error: "Erro ao buscar produto" });
-  }
+app.get('/add-product/:id', (req, res) => {
+  res.sendFile('add-product.html', { root: "public_html"});
 });
-
 // Funções para calcular badges
 const isNewProduct = (createdDate) => {
     const currentDate = new Date();
@@ -311,7 +296,7 @@ const generateTagVariants = (tag) => {
     const lowercaseTag = tag.toLowerCase();
     const uppercaseTag = tag.toUpperCase();
     const capitalizedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
-    
+
     const pluralTag = pluralize(lowercaseTag);
     const pluralCapitalizedTag = pluralize(capitalizedTag);
     const pluralUppercaseTag = pluralize(uppercaseTag);
@@ -371,26 +356,9 @@ app.post('/get-products', (req, res) => {
 
 
 // Rota para produtos
-app.get('/products/:id', async (req, res) => {
-  const productId = req.params.id;
-  const products = collection(db, "products");
-console.log("ID do produto:", productId);
-
-  try {
-    const productDoc = await getDoc(doc(products, productId));
-
-    if (productDoc.exists()) {
-      const productData = productDoc.data();
-      res.json(productData); // Retorna os dados do produto em JSON
-    } else {
-      res.status(404).json({ error: "Produto não encontrado" });
-    }
-  } catch (error) {
-    res.status(500).json({ error: "Erro ao buscar produto" });
-  }
+app.get('/products/:id', (req, res) => {
+    res.sendFile("product.html", { root: "public_html" });
 });
-
-
 
 // Rota de busca
 app.get('/search/:key', (req, res) => {
@@ -512,7 +480,7 @@ app.post('/calculate-distance', async (req, res) => {
       if (response.data.rows[0].elements[0].status === 'OK') {
           const distanceInMeters = response.data.rows[0].elements[0].distance.value;
           const distanceInKm = distanceInMeters / 1000;
-          
+
           res.json({ distance: distanceInKm });
       } else {
           throw new Error(`Google Maps API Error: ${response.data.rows[0].elements[0].status}`);
