@@ -227,9 +227,24 @@ app.get('/dashboard', (req, res) => {
 app.get('/add-product', (req, res) => {
   res.sendFile('add-product.html', { root: "public_html"});
 });
+// Rota para editar o produto
+app.get('/add-product/:id', async (req, res) => {
+    const productId = req.params.id; // Obtém o ID do produto da URL
+    const products = collection(db, "products");
 
-app.get('/add-product/:id', (req, res) => {
-  res.sendFile('add-product.html', { root: "public_html"});
+    try {
+        const productDoc = await getDoc(doc(products, productId));
+
+        if (productDoc.exists()) {
+            const productData = productDoc.data();
+            // Aqui você poderia renderizar a página com os dados do produto
+            res.json(productData); // Retorna os dados do produto em formato JSON
+        } else {
+            res.status(404).json({ error: "Produto não encontrado" });
+        }
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar produto" });
+    }
 });
 // Funções para calcular badges
 const isNewProduct = (createdDate) => {
@@ -356,8 +371,23 @@ app.post('/get-products', (req, res) => {
 
 
 // Rota para produtos
-app.get('/products/:id', (req, res) => {
-    res.sendFile("product.html", { root: "public_html" });
+app.get('/products/:id', async (req, res) => {
+    const productId = req.params.id; // Obtém o ID do produto da URL
+    const products = collection(db, "products");
+
+    try {
+        const productDoc = await getDoc(doc(products, productId));
+
+        if (productDoc.exists()) {
+            const productData = productDoc.data();
+            // Aqui você poderia renderizar a página com os dados do produto
+            res.json(productData); // Retorna os dados do produto em formato JSON
+        } else {
+            res.status(404).json({ error: "Produto não encontrado" });
+        }
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar produto" });
+    }
 });
 
 // Rota de busca
