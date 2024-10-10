@@ -369,8 +369,7 @@ app.post('/get-products', (req, res) => {
     });
 });
 
-
-// Rota para produtos
+// Rota para buscar produtos pelo ID
 app.get('/products/:id', async (req, res) => {
     const productId = req.params.id;  // Obtém o ID do produto da URL
     const productsCollection = collection(db, "products");
