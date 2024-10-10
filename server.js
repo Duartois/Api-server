@@ -373,22 +373,7 @@ app.post('/get-products', (req, res) => {
 
 // Rota para produtos
 app.get('/products/:id', async (req, res) => {
-    const productId = req.params.id; // Obtém o ID do produto da URL
-    const products = collection(db, "products");
-
-    try {
-        const productDoc = await getDoc(doc(products, productId));
-
-        if (productDoc.exists()) {
-            const productData = productDoc.data();
-            // Aqui você poderia renderizar a página com os dados do produto
-            res.json(productData); // Retorna os dados do produto em formato JSON
-        } else {
-            res.status(404).json({ error: "Produto não encontrado" });
-        }
-    } catch (error) {
-        res.status(500).json({ error: "Erro ao buscar produto" });
-    }
+    res.sendFile('product.html', { root: 'public_html' });
 });
 
 // Rota de busca
