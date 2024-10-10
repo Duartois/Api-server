@@ -274,27 +274,29 @@ app.post('/add-product', (req, res) => {
 
     if (!draft) {
         if (!name.length) {
-            res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
+            return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
         } else if (!price.length || isNaN(Number(price))) {
-            res.json({ 'alert': 'Adicione um preço válido' });
+            return res.json({ 'alert': 'Adicione um preço válido' });
         } else if (oldPrice !== undefined && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
-            res.json({ 'alert': 'Adicione um valor antigo válido' });
+            return res.json({ 'alert': 'Adicione um valor antigo válido' });
         } else if (savePrice !== undefined && !savePrice.length) {
-            res.json({ 'alert': 'Adicione um desconto' });
+            return res.json({ 'alert': 'Adicione um desconto' });
         } else if (!shortDes.length) {
-            res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
+            return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
         } else if (!tags.length) {
-            res.json({ 'alert': 'Adicione uma tag' });
+            return res.json({ 'alert': 'Adicione uma tag' });
         } else if (!detail.length) {
-            res.json({ 'alert': 'Precisa adicionar uma descrição' });
+            return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
     }
 
     // Adicionar o produto ao banco de dados com badges
-    let docName = id == undefined ? `${name.toLowerCase()}-${Math.floor(Math.random() * 50000)}` : id;
+    // Gere um docName, que será o ID do documento
+    let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
     let productWithBadges = {
         ...req.body,
+        id: docName, // Adicione o ID como parte do objeto do produto
         badges: {
             new: isNewProduct(createdAt),
             featured: isFeaturedProduct(req.body),
@@ -308,9 +310,11 @@ app.post('/add-product', (req, res) => {
             res.json({ 'product': name });
         })
         .catch(err => {
+            console.error('Erro ao adicionar produto:', err); // Log de erro para depuração
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
         });
 });
+
 const generateTagVariants = (tag) => {
     const lowercaseTag = tag.toLowerCase();
     const uppercaseTag = tag.toUpperCase();
