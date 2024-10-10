@@ -101,7 +101,10 @@ app.get('/', (req, res) => {
 app.get('/register', (req, res) => {
   res.status(200).json({ message: 'Rota Register válida' });
 });
-
+// product
+app.get('/product', (req, res) => {
+  res.sendFile("product.html", { root: "public_html" });
+});
 
 app.post('/register', (req, res) => {
   const { name, email, password, number, tac } = req.body;
@@ -370,7 +373,7 @@ app.post('/get-products', (req, res) => {
 });
 
 // Rota para buscar produtos pelo ID
-app.get('/products/:id', async (req, res) => {
+app.get('/product/:id', async (req, res) => {
     const productId = req.params.id;  // Obtém o ID do produto da URL
     const productsCollection = collection(db, "products");
 
