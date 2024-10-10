@@ -230,6 +230,7 @@ app.get('/add-product', (req, res) => {
 // Rota para editar o produto
 app.get('/add-product/:id', async (req, res) => {
     const productId = req.params.id; // Obtém o ID do produto da URL
+console.log("Product ID recebido:", productId);
     const products = collection(db, "products");
 
     try {
