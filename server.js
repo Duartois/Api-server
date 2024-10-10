@@ -390,6 +390,7 @@ app.get('/product/:id', async (req, res) => {
     }
 });
 
+
 // Rota de busca
 app.get('/search/:key', (req, res) => {
 res.sendFile("search.html", { root: "public_html" });
