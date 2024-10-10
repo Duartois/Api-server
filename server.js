@@ -385,7 +385,7 @@ app.get('/product/:id', async (req, res) => {
     try {
         const productDoc = await getDoc(doc(productsCollection, productId));
         if (productDoc.exists()) {
-            res.json(productDoc.data());  // Retorna os dados do produto em JSON
+            res.json({ id: productDoc.id, ...productDoc.data() });  // Retorna os dados do produto em JSON, incluindo o ID
         } else {
             res.status(404).json({ error: "Produto não encontrado" });
         }
@@ -394,6 +394,7 @@ app.get('/product/:id', async (req, res) => {
         res.status(500).json({ error: "Erro ao buscar produto" });
     }
 });
+
  
 
 
