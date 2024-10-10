@@ -389,6 +389,7 @@ app.get('/product/:id', async (req, res) => {
         res.status(500).json({ error: "Erro ao buscar produto" });
     }
 });
+ 
 
 
 // Rota de busca
