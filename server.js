@@ -272,30 +272,39 @@ const isPopularProduct = (salesCount) => {
 app.post('/add-product', (req, res) => {
     let { name, shortDes, detail, price, image, tags, email, draft, oldPrice, savePrice, id, createdAt, salesCount } = req.body;
 
+    // Validação de campos obrigatórios quando o produto não é um rascunho
     if (!draft) {
         if (!name.length) {
             return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
-        } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
+        } else if (oldPrice && isNaN(Number(oldPrice))) {
             return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
-        } else if (savePrice && !savePrice.length) {
-            return res.json({ 'alert': 'Adicione um desconto se aplicável' });
+        } else if (savePrice && isNaN(Number(savePrice))) {
+            return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
-        } else if (!tags.length) {
-            return res.json({ 'alert': 'Adicione uma tag' });
+        } else if (tags && !tags.length) {
+            return res.json({ 'alert': 'Adicione ao menos uma tag' });
         } else if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
     }
 
-    // Adicionar o produto ao banco de dados com badges
+    // Gerar o ID do documento para o produto
     let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
+    // Construir o objeto do produto a ser salvo
     let productWithBadges = {
-        ...req.body,
-        id: docName, 
+        name,
+        shortDes,
+        detail,
+        price,
+        image,
+        email,
+        draft,
+        createdAt: createdAt || new Date().toISOString(), // Usa a data atual se não for fornecida
+        id: docName,
         badges: {
             new: isNewProduct(createdAt),
             featured: isFeaturedProduct(req.body),
@@ -303,17 +312,28 @@ app.post('/add-product', (req, res) => {
         }
     };
 
+    // Adicionar os campos opcionais ao objeto se existirem
+    if (tags && tags.length > 0) {
+        productWithBadges.tags = tags;
+    }
+    if (oldPrice && oldPrice.length > 0) {
+        productWithBadges.oldPrice = oldPrice;
+    }
+    if (savePrice && savePrice.length > 0) {
+        productWithBadges.savePrice = savePrice;
+    }
+
+    // Salvar o produto no banco de dados
     let products = collection(db, "products");
     setDoc(doc(products, docName), productWithBadges)
         .then(() => {
             res.json({ 'product': name });
         })
         .catch(err => {
-            console.error('Erro ao adicionar produto:', err); 
+            console.error('Erro ao adicionar produto:', err);
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
         });
 });
-
 
 const generateTagVariants = (tag) => {
     const lowercaseTag = tag.toLowerCase();
