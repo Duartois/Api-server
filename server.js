@@ -233,23 +233,23 @@ app.get('/add-product', (req, res) => {
 // Rota para editar o produto
 app.get('/add-product/:id', async (req, res) => {
     const productId = req.params.id; // Obtém o ID do produto da URL
-console.log("Product ID recebido:", productId);
-    const products = collection(db, "products");
+    console.log("Product ID recebido:", productId);
+    const productsCollection = collection(db, "products");
 
     try {
-        const productDoc = await getDoc(doc(products, productId));
+        const productDoc = await getDoc(doc(productsCollection, productId));
 
         if (productDoc.exists()) {
-            const productData = productDoc.data();
-            // Aqui você poderia renderizar a página com os dados do produto
-            res.json(productData); // Retorna os dados do produto em formato JSON
+            res.json({ id: productDoc.id, ...productDoc.data() }); // Retorna os dados do produto em formato JSON, incluindo o ID
         } else {
             res.status(404).json({ error: "Produto não encontrado" });
         }
     } catch (error) {
+        console.error('Erro ao buscar produto:', error);
         res.status(500).json({ error: "Erro ao buscar produto" });
     }
 });
+
 // Funções para calcular badges
 const isNewProduct = (createdDate) => {
     const currentDate = new Date();
