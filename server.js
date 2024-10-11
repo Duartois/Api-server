@@ -272,7 +272,6 @@ const isPopularProduct = (salesCount) => {
 app.post('/add-product', (req, res) => {
     let { name, shortDes, detail, price, image, tags, email, draft, oldPrice, savePrice, id, createdAt, salesCount } = req.body;
 
-    // Validação de campos obrigatórios quando o produto não é um rascunho
     if (!draft) {
         if (!name.length) {
             return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
@@ -294,7 +293,7 @@ app.post('/add-product', (req, res) => {
     // Gerar o ID do documento para o produto
     let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
-    // Construir o objeto do produto a ser salvo
+    // Construir o objeto do produto
     let productWithBadges = {
         name,
         shortDes,
@@ -311,6 +310,30 @@ app.post('/add-product', (req, res) => {
             popular: isPopularProduct(salesCount)
         }
     };
+
+    // Adicionar tags, oldPrice e savePrice apenas se fornecidos
+    if (tags && tags.length > 0) {
+        productWithBadges.tags = tags;
+    }
+
+    if (oldPrice && oldPrice.length > 0) {
+        productWithBadges.oldPrice = oldPrice;
+    }
+
+    if (savePrice && savePrice.length > 0) {
+        productWithBadges.savePrice = savePrice;
+    }
+
+    let products = collection(db, "products");
+    setDoc(doc(products, docName), productWithBadges)
+        .then(() => {
+            res.json({ 'product': name });
+        })
+        .catch(err => {
+            console.error('Erro ao adicionar produto:', err); 
+            res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
+        });
+});
 
     // Adicionar os campos opcionais ao objeto se existirem
     if (tags && tags.length > 0) {
