@@ -277,10 +277,10 @@ app.post('/add-product', (req, res) => {
             return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
-        } else if (oldPrice !== undefined && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
-            return res.json({ 'alert': 'Adicione um valor antigo válido' });
-        } else if (savePrice !== undefined && !savePrice.length) {
-            return res.json({ 'alert': 'Adicione um desconto' });
+        } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
+            return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
+        } else if (savePrice && !savePrice.length) {
+            return res.json({ 'alert': 'Adicione um desconto se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
         } else if (!tags.length) {
@@ -291,12 +291,11 @@ app.post('/add-product', (req, res) => {
     }
 
     // Adicionar o produto ao banco de dados com badges
-    // Gere um docName, que será o ID do documento
     let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
     let productWithBadges = {
         ...req.body,
-        id: docName, // Adicione o ID como parte do objeto do produto
+        id: docName, 
         badges: {
             new: isNewProduct(createdAt),
             featured: isFeaturedProduct(req.body),
@@ -310,10 +309,11 @@ app.post('/add-product', (req, res) => {
             res.json({ 'product': name });
         })
         .catch(err => {
-            console.error('Erro ao adicionar produto:', err); // Log de erro para depuração
+            console.error('Erro ao adicionar produto:', err); 
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
         });
 });
+
 
 const generateTagVariants = (tag) => {
     const lowercaseTag = tag.toLowerCase();
