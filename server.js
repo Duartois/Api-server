@@ -277,31 +277,34 @@ app.post('/add-product', (req, res) => {
             return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
-        } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
-            // Só valida o oldPrice se ele estiver presente
+        }
+
+        if (oldPrice && isNaN(Number(oldPrice))) {
             return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
-        } else if (savePrice && (isNaN(Number(savePrice)) || !savePrice.length)) {
-            // Só valida o savePrice se ele estiver presente
+        }
+
+        if (savePrice && isNaN(Number(savePrice))) {
             return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
-        } else if (!shortDes.length) {
+        }
+
+        if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
-        } else if (!tags.length) {
+        } else if (!tags || !tags.length) {
             return res.json({ 'alert': 'Adicione uma tag' });
         } else if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
     }
 
-    // Processa os dados do produto e insere no banco de dados
     let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
     let productWithBadges = {
         ...req.body,
-        id: docName, 
+        id: docName,
         badges: {
             new: isNewProduct(createdAt),
             featured: isFeaturedProduct(req.body),
-            popular: isPopularProduct(salesCount)
+            popular: isPopularProduct(salesCount),
         }
     };
 
@@ -311,11 +314,10 @@ app.post('/add-product', (req, res) => {
             res.json({ 'product': name });
         })
         .catch(err => {
-            console.error('Erro ao adicionar produto:', err); 
+            console.error('Erro ao adicionar produto:', err);
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
         });
 });
-
 const generateTagVariants = (tag) => {
     if (!tag || !tag.trim()) {
         // Se a tag estiver vazia ou contiver apenas espaços em branco, retorna um array vazio
