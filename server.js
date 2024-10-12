@@ -34,7 +34,6 @@ const corsOptions = {
   origin: ['https://bichinhosousados.com', 'http://localhost:3000'], // Teste com URL direta
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
@@ -278,39 +277,31 @@ app.post('/add-product', (req, res) => {
             return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
-        }
-
-        if (oldPrice && isNaN(Number(oldPrice))) {
+        } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
+            // Só valida o oldPrice se ele estiver presente
             return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
-        }
-
-        if (savePrice && isNaN(Number(savePrice))) {
+        } else if (savePrice && (isNaN(Number(savePrice)) || !savePrice.length)) {
+            // Só valida o savePrice se ele estiver presente
             return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
-        }
-
-        if (!shortDes.length) {
+        } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
-        }
-
-        // Agora, se as tags forem indefinidas ou vazias, o backend continuará
-        if (!tags || !tags.length) {
-            tags = []; // Define tags como um array vazio se não houver tags
-        }
-
-        if (!detail.length) {
+        } else if (!tags.length) {
+            return res.json({ 'alert': 'Adicione uma tag' });
+        } else if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
     }
 
-    let docName = id ? id : ⁠ ${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)} ⁠;
+    // Processa os dados do produto e insere no banco de dados
+    let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
     let productWithBadges = {
         ...req.body,
-        id: docName,
+        id: docName, 
         badges: {
             new: isNewProduct(createdAt),
             featured: isFeaturedProduct(req.body),
-            popular: isPopularProduct(salesCount),
+            popular: isPopularProduct(salesCount)
         }
     };
 
@@ -320,10 +311,11 @@ app.post('/add-product', (req, res) => {
             res.json({ 'product': name });
         })
         .catch(err => {
-            console.error('Erro ao adicionar produto:', err);
+            console.error('Erro ao adicionar produto:', err); 
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
         });
 });
+
 const generateTagVariants = (tag) => {
     if (!tag || !tag.trim()) {
         // Se a tag estiver vazia ou contiver apenas espaços em branco, retorna um array vazio
