@@ -278,11 +278,11 @@ app.post('/add-product', (req, res) => {
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
         } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
-            // Validação do oldPrice apenas se ele existir
+            // Só valida o oldPrice se ele estiver presente
             return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
-        } else if (savePrice && !savePrice.length) {
-            // Validação do savePrice apenas se ele existir
-            return res.json({ 'alert': 'Adicione um desconto se aplicável' });
+        } else if (savePrice && (isNaN(Number(savePrice)) || !savePrice.length)) {
+            // Só valida o savePrice se ele estiver presente
+            return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
         } else if (!tags.length) {
