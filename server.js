@@ -354,14 +354,18 @@ app.post('/get-products', (req, res) => {
   let queryRef;
 
   if (badge) {
-    queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
+    queryRef = getDocs(query(products, where(⁠ badges.${badge} ⁠, '==', true)));
   } else if (id) {
     queryRef = getDoc(doc(products, id));
-  } else if (tag) {
+  } else if (tag && tag.trim()) {  // Certifica-se de que a tag não está vazia ou inválida
     const tagVariants = generateTagVariants(tag);
-    queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
+    if (tagVariants.length > 0) {
+      queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
+    } else {
+      return res.json('no products');
+    }
   } else {
-    queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por e-mail
+    queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por tag
   }
 
   queryRef
