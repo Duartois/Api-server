@@ -289,9 +289,14 @@ app.post('/add-product', (req, res) => {
 
         if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
-        } else if (!tags || !tags.length) {
-            return res.json({ 'alert': 'Adicione uma tag' });
-        } else if (!detail.length) {
+        }
+
+        // Agora, se as tags forem indefinidas ou vazias, o backend continuará
+        if (!tags || !tags.length) {
+            tags = []; // Define tags como um array vazio se não houver tags
+        }
+
+        if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
     }
