@@ -337,11 +337,6 @@ app.post('/add-product', (req, res) => {
 });
 
 const generateTagVariants = (tag) => {
-    if (!tag || !tag.trim()) {
-        // Se a tag estiver vazia ou contiver apenas espaços em branco, retorna um array vazio
-        return [];
-    }
-
     const lowercaseTag = tag.toLowerCase();
     const uppercaseTag = tag.toUpperCase();
     const capitalizedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
