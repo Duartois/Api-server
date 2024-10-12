@@ -301,7 +301,7 @@ app.post('/add-product', (req, res) => {
         }
     }
 
-    let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
+    let docName = id ? id : ⁠ ${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)} ⁠;
 
     let productWithBadges = {
         ...req.body,
