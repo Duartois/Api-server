@@ -278,8 +278,10 @@ app.post('/add-product', (req, res) => {
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
         } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
+            // Validação do oldPrice apenas se ele existir
             return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
         } else if (savePrice && !savePrice.length) {
+            // Validação do savePrice apenas se ele existir
             return res.json({ 'alert': 'Adicione um desconto se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
@@ -290,7 +292,7 @@ app.post('/add-product', (req, res) => {
         }
     }
 
-    // Adicionar o produto ao banco de dados com badges
+    // Processa os dados do produto e insere no banco de dados
     let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
     let productWithBadges = {
