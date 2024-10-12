@@ -233,23 +233,23 @@ app.get('/add-product', (req, res) => {
 // Rota para editar o produto
 app.get('/add-product/:id', async (req, res) => {
     const productId = req.params.id; // Obtém o ID do produto da URL
-    console.log("Product ID recebido:", productId);
-    const productsCollection = collection(db, "products");
+console.log("Product ID recebido:", productId);
+    const products = collection(db, "products");
 
     try {
-        const productDoc = await getDoc(doc(productsCollection, productId));
+        const productDoc = await getDoc(doc(products, productId));
 
         if (productDoc.exists()) {
-            res.json({ id: productDoc.id, ...productDoc.data() }); // Retorna os dados do produto em formato JSON, incluindo o ID
+            const productData = productDoc.data();
+            // Aqui você poderia renderizar a página com os dados do produto
+            res.json(productData); // Retorna os dados do produto em formato JSON
         } else {
             res.status(404).json({ error: "Produto não encontrado" });
         }
     } catch (error) {
-        console.error('Erro ao buscar produto:', error);
         res.status(500).json({ error: "Erro ao buscar produto" });
     }
 });
-
 // Funções para calcular badges
 const isNewProduct = (createdDate) => {
     const currentDate = new Date();
@@ -277,52 +277,31 @@ app.post('/add-product', (req, res) => {
             return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
-        } else if (oldPrice && isNaN(Number(oldPrice))) {
+        } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
             return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
-        } else if (savePrice && isNaN(Number(savePrice))) {
-            return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
+        } else if (savePrice && !savePrice.length) {
+            return res.json({ 'alert': 'Adicione um desconto se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
-        } else if (tags && !tags.length) {
-            return res.json({ 'alert': 'Adicione ao menos uma tag' });
+        } else if (!tags.length) {
+            return res.json({ 'alert': 'Adicione uma tag' });
         } else if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
     }
 
-    // Gerar o ID do documento para o produto
+    // Adicionar o produto ao banco de dados com badges
     let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
-    // Construir o objeto do produto
     let productWithBadges = {
-        name,
-        shortDes,
-        detail,
-        price,
-        image,
-        email,
-        draft,
-        createdAt: createdAt || new Date().toISOString(), // Usa a data atual se não for fornecida
-        id: docName,
+        ...req.body,
+        id: docName, 
         badges: {
             new: isNewProduct(createdAt),
             featured: isFeaturedProduct(req.body),
             popular: isPopularProduct(salesCount)
         }
     };
-
-    // Adicionar tags, oldPrice e savePrice apenas se fornecidos
-    if (tags && tags.length > 0) {
-        productWithBadges.tags = tags;
-    }
-
-    if (oldPrice && oldPrice.length > 0) {
-        productWithBadges.oldPrice = oldPrice;
-    }
-
-    if (savePrice && savePrice.length > 0) {
-        productWithBadges.savePrice = savePrice;
-    }
 
     let products = collection(db, "products");
     setDoc(doc(products, docName), productWithBadges)
@@ -331,29 +310,6 @@ app.post('/add-product', (req, res) => {
         })
         .catch(err => {
             console.error('Erro ao adicionar produto:', err); 
-            res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
-        });
-});
-
-    // Adicionar os campos opcionais ao objeto se existirem
-    if (tags && tags.length > 0) {
-        productWithBadges.tags = tags;
-    }
-    if (oldPrice && oldPrice.length > 0) {
-        productWithBadges.oldPrice = oldPrice;
-    }
-    if (savePrice && savePrice.length > 0) {
-        productWithBadges.savePrice = savePrice;
-    }
-
-    // Salvar o produto no banco de dados
-    let products = collection(db, "products");
-    setDoc(doc(products, docName), productWithBadges)
-        .then(() => {
-            res.json({ 'product': name });
-        })
-        .catch(err => {
-            console.error('Erro ao adicionar produto:', err);
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
         });
 });
@@ -438,7 +394,7 @@ app.get('/product/:id', async (req, res) => {
     }
 });
 
- 
+
 
 
 // Rota de busca
