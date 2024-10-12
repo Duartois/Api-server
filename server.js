@@ -270,7 +270,7 @@ const isPopularProduct = (salesCount) => {
 };
 
 app.post('/add-product', (req, res) => {
-    let { name, shortDes, detail, price, image, tags = [], email, draft, oldPrice, savePrice, id, createdAt, salesCount } = req.body;
+    let { name, shortDes, detail, price, image, tags, email, draft, oldPrice, savePrice, id, createdAt, salesCount } = req.body;
 
     if (!draft) {
         if (!name.length) {
@@ -278,17 +278,22 @@ app.post('/add-product', (req, res) => {
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
         } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
+            // Só valida o oldPrice se ele estiver presente
             return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
         } else if (savePrice && (isNaN(Number(savePrice)) || !savePrice.length)) {
+            // Só valida o savePrice se ele estiver presente
             return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
+        } else if (!tags.length) {
+            return res.json({ 'alert': 'Adicione uma tag' });
         } else if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
     }
 
-    let docName = id ? id : ⁠ ${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)} ⁠;
+    // Processa os dados do produto e insere no banco de dados
+    let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
     let productWithBadges = {
         ...req.body,
