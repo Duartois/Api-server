@@ -347,75 +347,42 @@ const pluralize = (word) => {
     }
 };
 
-app.post('/get-products', async (req, res) => {
+app.post('/get-products', (req, res) => {
   let { id, tag, badge } = req.body;
 
   let products = collection(db, "products");
   let queryRef;
 
-  try {
-    if (badge) {
-      // Busca por produtos que possuem o badge específico
-      queryRef = getDocs(query(products, where(⁠ badges.${badge} ⁠, '==', true)));
-    } else if (id) {
-      // Busca por um produto específico com base no ID
-      queryRef = getDoc(doc(products, id));
-    } else if (tag && tag.trim()) {
-      // Verifica se a tag é válida antes de gerar variações e realizar a busca
-      const tagVariants = generateTagVariants(tag);
-
-      // Executa a busca por produtos com as variações de tags
-      const productsWithTags = await getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
-      
-      // Executa a busca por produtos sem tags
-      const productsWithoutTags = await getDocs(query(products, where("tags", "==", [])));
-      
-      // Combina os dois resultados
-      let combinedProducts = [];
-      
-      productsWithTags.forEach(item => {
-        let data = item.data();
-        data.id = item.id;
-        combinedProducts.push(data);
-      });
-
-      productsWithoutTags.forEach(item => {
-        let data = item.data();
-        data.id = item.id;
-        combinedProducts.push(data);
-      });
-
-      // Retorna todos os produtos combinados
-      return res.json(combinedProducts.length ? combinedProducts : 'no products');
-    } else {
-      // Caso não haja filtro de tag, retorna todos os produtos
-      queryRef = getDocs(products);
-    }
-
-    // Se não estivermos trabalhando com tags
-    if (queryRef) {
-      queryRef.then(productsSnapshot => {
-        let productArr = [];
-        if (!productsSnapshot.empty) {
-          productsSnapshot.forEach(item => {
-            let data = item.data();
-            data.id = item.id;
-            productArr.push(data);
-          });
-          res.json(productArr);
-        } else {
-          res.json('no products');
-        }
-      }).catch(error => {
-        console.error("Erro ao buscar produtos:", error);
-        res.status(500).json({ error: 'Internal server error' });
-      });
-    }
-  } catch (error) {
-    console.error("Erro geral na busca de produtos:", error);
-    res.status(500).json({ error: 'Erro ao buscar produtos' });
+  if (badge) {
+    queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
+  } else if (id) {
+    queryRef = getDoc(doc(products, id));
+  } else if (tag) {
+    const tagVariants = generateTagVariants(tag);
+    queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
+  } else {
+    queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por e-mail
   }
+
+  queryRef
+    .then(productsSnapshot => {
+      let productArr = [];
+      if (!productsSnapshot.empty) {
+        productsSnapshot.forEach(item => {
+          let data = item.data();
+          data.id = item.id;
+          productArr.push(data);
+        });
+        res.json(productArr);
+      } else {
+        res.json('no products');
+      }
+    })
+    .catch(error => {
+      res.status(500).json({ error: 'Internal server error' });
+    });
 });
+
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
     const productId = req.params.id;  // Obtém o ID do produto da URL
