@@ -283,8 +283,9 @@ app.post('/add-product', (req, res) => {
             return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
-        } else if (tags && !tags.length) {
-            return res.json({ 'alert': 'Adicione ao menos uma tag' });
+        } else if (!tags || !tags.length) {
+    return res.json({ 'alert': 'Adicione ao menos uma tag' });
+}
         } else if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
@@ -335,30 +336,12 @@ app.post('/add-product', (req, res) => {
         });
 });
 
-    // Adicionar os campos opcionais ao objeto se existirem
-    if (tags && tags.length > 0) {
-        productWithBadges.tags = tags;
-    }
-    if (oldPrice && oldPrice.length > 0) {
-        productWithBadges.oldPrice = oldPrice;
-    }
-    if (savePrice && savePrice.length > 0) {
-        productWithBadges.savePrice = savePrice;
-    }
-
-    // Salvar o produto no banco de dados
-    let products = collection(db, "products");
-    setDoc(doc(products, docName), productWithBadges)
-        .then(() => {
-            res.json({ 'product': name });
-        })
-        .catch(err => {
-            console.error('Erro ao adicionar produto:', err);
-            res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
-        });
-});
-
 const generateTagVariants = (tag) => {
+    if (!tag || !tag.trim()) {
+        // Se a tag estiver vazia ou contiver apenas espaços em branco, retorna um array vazio
+        return [];
+    }
+
     const lowercaseTag = tag.toLowerCase();
     const uppercaseTag = tag.toUpperCase();
     const capitalizedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
@@ -369,6 +352,7 @@ const generateTagVariants = (tag) => {
 
     return [lowercaseTag, uppercaseTag, capitalizedTag, pluralTag, pluralCapitalizedTag, pluralUppercaseTag];
 };
+
 
 // Função básica de pluralização
 const pluralize = (word) => {
