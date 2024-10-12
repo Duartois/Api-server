@@ -283,9 +283,8 @@ app.post('/add-product', (req, res) => {
             return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
-        } else if (!tags || !tags.length) {
-    return res.json({ 'alert': 'Adicione ao menos uma tag' });
-}
+        } else if (tags && !tags.length) {
+            return res.json({ 'alert': 'Adicione ao menos uma tag' });
         } else if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
@@ -336,6 +335,29 @@ app.post('/add-product', (req, res) => {
         });
 });
 
+    // Adicionar os campos opcionais ao objeto se existirem
+    if (tags && tags.length > 0) {
+        productWithBadges.tags = tags;
+    }
+    if (oldPrice && oldPrice.length > 0) {
+        productWithBadges.oldPrice = oldPrice;
+    }
+    if (savePrice && savePrice.length > 0) {
+        productWithBadges.savePrice = savePrice;
+    }
+
+    // Salvar o produto no banco de dados
+    let products = collection(db, "products");
+    setDoc(doc(products, docName), productWithBadges)
+        .then(() => {
+            res.json({ 'product': name });
+        })
+        .catch(err => {
+            console.error('Erro ao adicionar produto:', err);
+            res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
+        });
+});
+
 const generateTagVariants = (tag) => {
     const lowercaseTag = tag.toLowerCase();
     const uppercaseTag = tag.toUpperCase();
@@ -347,7 +369,6 @@ const generateTagVariants = (tag) => {
 
     return [lowercaseTag, uppercaseTag, capitalizedTag, pluralTag, pluralCapitalizedTag, pluralUppercaseTag];
 };
-
 
 // Função básica de pluralização
 const pluralize = (word) => {
@@ -368,54 +389,35 @@ app.post('/get-products', (req, res) => {
   let products = collection(db, "products");
   let queryRef;
 
-  try {
-    if (badge) {
-      // Consultar produtos que tenham o badge especificado
-      queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
-    } else if (id) {
-      // Consultar produto pelo ID
-      queryRef = getDoc(doc(products, id));
-    } else if (tag) {
-      const tagVariants = generateTagVariants(tag);
-
-      if (tagVariants.length > 0) {
-        // Consultar produtos que contenham qualquer variante da tag
-        queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
-      } else {
-        return res.json('no products'); // Retornar sem consulta se as tags estiverem inválidas
-      }
-    } else {
-      // Se nenhum filtro for fornecido, buscar todos os produtos
-      queryRef = getDocs(products); 
-    }
-
-    queryRef
-      .then(productsSnapshot => {
-        let productArr = [];
-
-        // Se houver produtos encontrados
-        if (!productsSnapshot.empty) {
-          productsSnapshot.forEach(item => {
-            let data = item.data();
-            data.id = item.id;
-            productArr.push(data);
-          });
-          res.json(productArr); // Retornar array de produtos
-        } else {
-          res.json('no products'); // Nenhum produto encontrado
-        }
-      })
-      .catch(error => {
-        console.error('Erro ao consultar produtos:', error);
-        res.status(500).json({ error: 'Internal server error' });
-      });
-
-  } catch (error) {
-    console.error('Erro ao processar solicitação:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  if (badge) {
+    queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
+  } else if (id) {
+    queryRef = getDoc(doc(products, id));
+  } else if (tag) {
+    const tagVariants = generateTagVariants(tag);
+    queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
+  } else {
+    queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por e-mail
   }
-});
 
+  queryRef
+    .then(productsSnapshot => {
+      let productArr = [];
+      if (!productsSnapshot.empty) {
+        productsSnapshot.forEach(item => {
+          let data = item.data();
+          data.id = item.id;
+          productArr.push(data);
+        });
+        res.json(productArr);
+      } else {
+        res.json('no products');
+      }
+    })
+    .catch(error => {
+      res.status(500).json({ error: 'Internal server error' });
+    });
+});
 
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
