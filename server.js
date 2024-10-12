@@ -354,22 +354,26 @@ app.post('/get-products', (req, res) => {
   let queryRef;
 
   if (badge) {
+    // Busca por produtos que possuem o badge específico
     queryRef = getDocs(query(products, where(⁠ badges.${badge} ⁠, '==', true)));
   } else if (id) {
+    // Busca por um produto específico com base no ID
     queryRef = getDoc(doc(products, id));
-  } else if (tag && tag.trim()) {  // Certifica-se de que a tag não está vazia ou inválida
+  } else if (tag && tag.trim()) {  
+    // Verifica se a tag é válida antes de gerar variações e realizar a busca
     const tagVariants = generateTagVariants(tag);
     if (tagVariants.length > 0) {
       queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
     } else {
-      return res.json('no products');
+      return res.json('no products');  // Se não houver variações, retorna sem produtos
     }
   } else {
-    queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por tag
+    // Caso não haja filtro de tag, retorna todos os produtos
+    queryRef = getDocs(products);
   }
 
   queryRef
-    .then(productsSnapshot => {
+    .then((productsSnapshot) => {
       let productArr = [];
       if (!productsSnapshot.empty) {
         productsSnapshot.forEach(item => {
@@ -382,11 +386,11 @@ app.post('/get-products', (req, res) => {
         res.json('no products');
       }
     })
-    .catch(error => {
+    .catch((error) => {
+      console.error("Erro ao buscar produtos:", error);
       res.status(500).json({ error: 'Internal server error' });
     });
 });
-
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
     const productId = req.params.id;  // Obtém o ID do produto da URL
