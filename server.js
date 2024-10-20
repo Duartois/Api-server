@@ -34,7 +34,7 @@ const corsOptions = {
   origin: ['https://bichinhosousados.com'], // Teste com URL direta
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, 
+  credentials: 'include',
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
