@@ -31,7 +31,7 @@ const port = process.env.PORT || 3000;
 
 // Configuração do CORS
 const corsOptions = {
-  origin: ['https://bichinhosousados.com', 'http://localhost:3000'], // Teste com URL direta
+  origin: ['https://bichinhosousados.com/'], // Teste com URL direta
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true, 
