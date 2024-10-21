@@ -31,12 +31,13 @@ const port = process.env.PORT || 3000;
 
 // Configuração do CORS
 const corsOptions = {
-  origin: ['https://bichinhosousados.com'], // Teste com URL direta
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: 'https://bichinhosousados.com', // Sem a barra no final
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Inclua todos os métodos usados
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: 'true',
+  credentials: true,  // Deve ser true, já que o cliente está enviando credenciais
   optionsSuccessStatus: 200
 };
+
 app.use(cors(corsOptions));
 
 // Middlewares
