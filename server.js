@@ -235,7 +235,7 @@ app.get('/add-product', (req, res) => {
 // Rota para editar o produto
 app.get('/add-product/:id', async (req, res) => {
     const productId = req.params.id; // Obtém o ID do produto da URL
-console.log("Product ID recebido:", productId);
+    console.log("Product ID recebido:", productId);
     const products = collection(db, "products");
 
     try {
@@ -243,14 +243,21 @@ console.log("Product ID recebido:", productId);
 
         if (productDoc.exists()) {
             const productData = productDoc.data();
-            // Aqui você poderia renderizar a página com os dados do produto
-            res.json(productData); // Retorna os dados do produto em formato JSON
+
+            // Adiciona valores padrão para campos inexistentes
+            productData.oldPrice = productData.oldPrice || '';  // Deixe vazio ou outro valor padrão
+            productData.savePrice = productData.savePrice || '';  // Deixe vazio ou outro valor padrão
+            productData.tags = productData.tags || [];  // Array vazio para tags
+
+            // Retorna o produto com os campos padronizados
+            res.json(productData);
         } else {
             res.status(404).json({ error: "Produto não encontrado" });
         }
     } catch (error) {
-        res.status(500).json({ error: "Erro ao buscar produto" });
-    }
+        console.error('Erro ao buscar produto:', error);
+        res.status(500).json({ error: "Erro ao buscar produto" });
+    }
 });
 // Funções para calcular badges
 const isNewProduct = (createdDate) => {
