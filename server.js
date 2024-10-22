@@ -297,11 +297,11 @@ app.post('/add-product', (req, res) => {
         }
     }
 
-    let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
+    let docName = id ? id : ${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)};
 
     let productWithBadges = {
         ...req.body,
-        id: docName, 
+        id: docName,
         badges: {
             new: isNewProduct(createdAt),
             featured: isFeaturedProduct(req.body),
@@ -317,7 +317,7 @@ app.post('/add-product', (req, res) => {
         .catch(err => {
             console.error('Erro ao adicionar produto:', err); 
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
-        });
+        });
 });
 const generateTagVariants = (tag) => {
     if (!tag || !tag.trim()) {
