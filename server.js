@@ -286,9 +286,11 @@ app.post('/add-product', (req, res) => {
             return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
         } else if (!price.length || isNaN(Number(price))) {
             return res.json({ 'alert': 'Adicione um preço válido' });
-        } else if (oldPrice && (isNaN(Number(oldPrice)) || !oldPrice.length)) {
+        } else if (oldPrice && isNaN(Number(oldPrice))) {
+            // Agora só verifica oldPrice se ele existir e for um número inválido
             return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
-        } else if (savePrice && (isNaN(Number(savePrice)) || !savePrice.length)) {
+        } else if (savePrice && isNaN(Number(savePrice))) {
+            // Agora só verifica savePrice se ele existir e for um número inválido
             return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
         } else if (!shortDes.length) {
             return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
@@ -297,7 +299,12 @@ app.post('/add-product', (req, res) => {
         }
     }
 
-    let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
+    // Processa as tags apenas se forem fornecidas
+    if (tags && tags.length === 0) {
+        tags = [];  // Se não houver tags, define como array vazio
+    }
+
+    let docName = id ? id : ${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)};
 
     let productWithBadges = {
         ...req.body,
@@ -317,7 +324,7 @@ app.post('/add-product', (req, res) => {
         .catch(err => {
             console.error('Erro ao adicionar produto:', err); 
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
-        });
+        });
 });
 const generateTagVariants = (tag) => {
     if (!tag || !tag.trim()) {
