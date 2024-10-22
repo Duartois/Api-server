@@ -245,8 +245,8 @@ app.get('/add-product/:id', async (req, res) => {
             const productData = productDoc.data();
 
             // Adiciona valores padrão para campos inexistentes
-            productData.oldPrice = productData.oldPrice || '';  // Deixe vazio ou outro valor padrão
-            productData.savePrice = productData.savePrice || '';  // Deixe vazio ou outro valor padrão
+            productData.oldPrice = productData.oldPrice || 'R$ 0,00';  // Coloque um placeholder de preço ou outro valor padrão
+            productData.savePrice = productData.savePrice || 'R$ 0,00';  // Placeholder para o desconto
             productData.tags = productData.tags || [];  // Array vazio para tags
 
             // Retorna o produto com os campos padronizados
