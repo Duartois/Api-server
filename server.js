@@ -294,6 +294,7 @@ const isPopularProduct = (salesCount) => {
 app.post('/add-product', (req, res) => {
     let { name, shortDes, detail, price, image, tags = [], email, draft, oldPrice, savePrice, id, createdAt, salesCount } = req.body;
 
+    // Validação dos campos obrigatórios
     if (!draft) {
         if (!name.length) {
             return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
@@ -308,6 +309,11 @@ app.post('/add-product', (req, res) => {
         } else if (!detail.length) {
             return res.json({ 'alert': 'Precisa adicionar uma descrição' });
         }
+    }
+
+    // Garantir que o oldPrice e savePrice são consistentes
+    if (savePrice && !oldPrice) {
+        return res.json({ 'alert': 'Adicione um valor antigo (oldPrice) se estiver adicionando um desconto (savePrice)' });
     }
 
     // Define o ID do produto
