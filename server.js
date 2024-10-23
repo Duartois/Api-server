@@ -310,18 +310,21 @@ app.post('/add-product', (req, res) => {
         }
     }
 
-   let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
+    // Define o ID do produto
+    let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
+    // Adicionar as badges conforme os critérios de popular, novo, destaque
     let productWithBadges = {
         ...req.body,
         id: docName,
         badges: {
             new: isNewProduct(createdAt),
-            featured: isFeaturedProduct(req.body),
+            featured: savePrice ? isFeaturedProduct(req.body) : false,  // Destaque só se houver savePrice
             popular: isPopularProduct(salesCount)
         }
     };
 
+    // Armazena o produto na coleção "products"
     let products = collection(db, "products");
     setDoc(doc(products, docName), productWithBadges)
         .then(() => {
@@ -330,7 +333,7 @@ app.post('/add-product', (req, res) => {
         .catch(err => {
             console.error('Erro ao adicionar produto:', err); 
             res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
-        });
+        });
 });
 const generateTagVariants = (tag) => {
     if (!tag || !tag.trim()) {
