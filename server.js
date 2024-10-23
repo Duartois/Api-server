@@ -30,8 +30,21 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Configuração do CORS
+
+const allowedOrigins = [
+  'https://www.bichinhosousados.com',
+  'https://bichinhosousados.com'
+];
+
 const corsOptions = {
-  origin: 'https://www.bichinhosousados.com', // Sem a barra no final
+  origin: function (origin, callback) {
+    // Verifica se a origem está na lista de permitidas ou se não há origem (em alguns casos)
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Inclua todos os métodos usados
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,  // Deve ser true, já que o cliente está enviando credenciais
