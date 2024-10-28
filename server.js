@@ -610,6 +610,33 @@ app.post('/stripe-checkout', async (req, res) => {
       res.status(500).json({ error: "Falha ao criar sessão de checkout", message: error.message });
   }
 });
+// Endpoint para receber webhooks da Stripe
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  const payload = req.body;
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
+  } catch (err) {
+    console.error(`Erro ao verificar assinatura do webhook: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    console.log('Sessão de checkout completa recebida:', session);
+
+    // Enviar detalhes do pedido por e-mail e WhatsApp
+    sendOrderDetailsViaEmail(session);
+    sendOrderDetailsViaWhatsApp(session);
+  }
+
+  res.status(200).json({ received: true });
+});
+
 app.get('/success', (req, res) => {
   console.log("Página de sucesso acessada com session_id:", req.query.session_id);
   res.sendFile("success.html", { root: "../front-end/public/pages" });
