@@ -9,6 +9,8 @@ import Stripe from 'stripe';
 import correios from 'correios-brasil';
 import { Client } from "@googlemaps/google-maps-services-js";
 import cors from 'cors';
+import nodemailer from 'nodemailer';
+import twilio from 'twilio';
 
 
 // Configuração do Firebase
