@@ -39,22 +39,19 @@ const allowedOrigins = [
 ];
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Verifica se a origem está na lista de permitidas ou se não há origem (em alguns casos)
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Inclua todos os métodos usados
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,  // Deve ser true, já que o cliente está enviando credenciais
+  origin: ['https://www.bichinhosousados.com', 'https://bichinhosousados.com'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['*'], // Permite todos os cabeçalhos
+  credentials: true,
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+
+// Rota global para lidar com requisições de pré-voo OPTIONS
+app.options('*', cors(corsOptions), (req, res) => {
+  res.sendStatus(200);  // Responde com status 200 para qualquer requisição OPTIONS
+});
 
 // Middlewares
 app.use(express.json());
