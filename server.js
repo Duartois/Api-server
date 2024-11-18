@@ -9,8 +9,8 @@ import Stripe from 'stripe';
 import correios from 'correios-brasil';
 import { Client } from "@googlemaps/google-maps-services-js";
 import cors from 'cors';
+import twilio from 'twilio';
 // import nodemailer from 'nodemailer';
-// import twilio from 'twilio';
 
 
 // Configuração do Firebase
@@ -610,32 +610,33 @@ app.post('/stripe-checkout', async (req, res) => {
       res.status(500).json({ error: "Falha ao criar sessão de checkout", message: error.message });
   }
 });
+
 // Endpoint para receber webhooks da Stripe
-//app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  //const payload = req.body;
-  //const sig = req.headers['stripe-signature'];
-  //const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const payload = req.body;
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  //let event;
+  let event;
 
-  //try {
-    //event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-  //} catch (err) {
-    //console.error(⁠ Erro ao verificar assinatura do webhook: ${err.message} ⁠);
-    //return res.status(400).send(⁠ Webhook Error: ${err.message} ⁠);
-  //}
+  try {
+   event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
+  } catch (err) {
+    console.error(⁠ Erro ao verificar assinatura do webhook: ${err.message} ⁠);
+    return res.status(400).send(⁠ Webhook Error: ${err.message} ⁠);
+  }
 
-  //if (event.type === 'checkout.session.completed') {
-    //const session = event.data.object;
-    //console.log('Sessão de checkout completa recebida:', session);
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    console.log('Sessão de checkout completa recebida:', session);
 
-    // Enviar detalhes do pedido por e-mail e WhatsApp
+     //Enviar detalhes do pedido por e-mail e WhatsApp
     //await sendOrderDetailsViaEmail(session);
-    //await sendOrderDetailsViaWhatsApp(session);
-  //}
+    await sendOrderDetailsViaWhatsApp(session);
+  }
 
-  //res.status(200).json({ received: true });
-//});
+  res.status(200).json({ received: true });
+});
 
 // Função para enviar detalhes do pedido por e-mail
 //async function sendOrderDetailsViaEmail(session) {
@@ -668,28 +669,28 @@ app.post('/stripe-checkout', async (req, res) => {
 //}
 
 // Função para enviar detalhes do pedido via WhatsApp
-//async function sendOrderDetailsViaWhatsApp(session) {
-  //const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+async function sendOrderDetailsViaWhatsApp(session) {
+  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-  //const message = `
-    //Seu pedido foi confirmado!\n
-    //- ID do pedido: ${session.id}
-    //- Itens: ${session.display_items.map(item => item.custom.name).join(', ')}
-    //- Total pago: R$${(session.amount_total / 100).toFixed(2)}
-    //- Endereço: ${session.shipping.address.line1}, ${session.shipping.address.city}
-  //`;
+  const message = `
+    Seu pedido foi confirmado!\n
+    - ID do pedido: ${session.id}
+    - Itens: ${session.display_items.map(item => item.custom.name).join(', ')}
+    - Total pago: R$${(session.amount_total / 100).toFixed(2)}
+    - Endereço: ${session.shipping.address.line1}, ${session.shipping.address.city}
+  `;
 
-  //try {
-    //const msg = await client.messages.create({
-      //body: message,
-      //from: ⁠ whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER} ⁠,
-      //to: ⁠ whatsapp:+55${session.customer_phone_number} ⁠ // Número do cliente em formato internacional
-    //});
-    //console.log('Mensagem enviada via WhatsApp:', msg.sid);
-  //} catch (error) {
-    //console.error('Erro ao enviar mensagem via WhatsApp:', error);
-  //}
-//}
+  try {
+    const msg = await client.messages.create({
+      body: message,
+      from: ⁠ whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER},
+      to: ⁠ whatsapp:+55${session.customer_phone_number} ⁠ // Número do cliente em formato internacional
+    });
+    console.log('Mensagem enviada via WhatsApp:', msg.sid);
+  } catch (error) {
+   console.error('Erro ao enviar mensagem via WhatsApp:', error);
+  }
+}
 
 app.get('/success', (req, res) => {
   console.log("Página de sucesso acessada com session_id:", req.query.session_id);
