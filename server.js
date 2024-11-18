@@ -621,11 +621,11 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 
   try {
    event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-.catch(error => {
+  } catch(error => {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal server error' });
 });
-  }
+  
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
