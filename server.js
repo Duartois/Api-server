@@ -685,8 +685,8 @@ async function sendOrderDetailsViaWhatsApp(session) {
   try {
     const msg = await client.messages.create({
       body: message,
-      from: whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER},
-      to: whatsapp:+55${session.customer_phone_number}, // Número do cliente em formato internacional
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      to: `whatsapp:+55${session.customer_phone_number}`, // Número do cliente em formato internacional
     });
     console.log('Mensagem enviada via WhatsApp:', msg.sid);
   } catch (error) {
