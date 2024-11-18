@@ -621,8 +621,6 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 
   try {
    event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-  } catch (err) {
-    return res.status(400).send(⁠ Webhook Error: ${err.message} ⁠);
   }
 
   if (event.type === 'checkout.session.completed') {
