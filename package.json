@@ -22,7 +22,8 @@
     "express": "^4.21.0",
     "firebase": "^10.12.2",
     "pluralize": "^8.0.0",
-    "stripe": "^16.8.0"
+    "stripe": "^16.8.0",
+    "twilio": "^5.3.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.2"
