@@ -621,10 +621,11 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 
   try {
    event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-  } catch(error => {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-});
+  } catch (error) {
+        console.error('Erro ao buscar produto:', error);
+        res.status(500).json({ error: "Erro ao buscar produto" });
+    }
+
   
 
   if (event.type === 'checkout.session.completed') {
