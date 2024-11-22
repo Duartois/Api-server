@@ -696,7 +696,7 @@ async function sendOrderDetailsViaWhatsApp(session) {
 
 app.get('/success', (req, res) => {
   console.log("Página de sucesso acessada com session_id:", req.query.session_id);
-  res.sendFile("success.html", { root: "../front-end/public/pages" });
+  res.sendFile("success.html", { root: "public_html/pages"  });
 });
 
 // Rota 404
