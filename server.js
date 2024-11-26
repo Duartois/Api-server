@@ -611,6 +611,8 @@ app.post('/stripe-checkout', async (req, res) => {
   }
 });
 
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // O segredo do webhook configurado no painel da Stripe
+
 // Middleware para processar o corpo da requisição como JSON
 app.post('/webhook', express.raw({ type: 'application/json' }), (request, response) => {
   const sig = request.headers['stripe-signature']; // Pegando a assinatura do webhook
@@ -649,6 +651,10 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (request, respon
     default:
       console.log(`Evento não tratado: ${event.type}`);
   }
+
+  // Retornar uma resposta 200 para confirmar o recebimento do evento
+  response.status(200).send();
+});
 
 
 // Função para enviar detalhes do pedido por e-mail
