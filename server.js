@@ -675,23 +675,23 @@ async function sendOrderDetailsViaWhatsApp(session) {
   const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
   const message = `
-    Seu pedido foi confirmado!\n
+    Novo pedido confirmado!\n
     - ID do pedido: ${session.id}
     - Itens: ${session.display_items.map(item => item.custom.name).join(', ')}
     - Total pago: R$${(session.amount_total / 100).toFixed(2)}
-    - Endereço: ${session.shipping.address.line1}, ${session.shipping.address.city}
+    - Endereço de entrega: ${session.shipping.address.line1}, ${session.shipping.address.city}
   `;
 
   try {
     const msg = await client.messages.create({
       body: message,
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-      to: `whatsapp:+55${session.customer_phone_number}`, // Número do cliente em formato internacional
+      to: `whatsapp:+5511958060256`, // Número fixo do portador do site
     });
     console.log('Mensagem enviada via WhatsApp:', msg.sid);
   } catch (error) {
-    console.error('Erro ao enviar mensagem via WhatsApp:', error);
-  }
+    console.error('Erro ao enviar mensagem via WhatsApp:', error);
+  }
 }
 
 app.get('/success', (req, res) => {
