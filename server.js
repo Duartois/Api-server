@@ -611,34 +611,45 @@ app.post('/stripe-checkout', async (req, res) => {
   }
 });
 
-// Endpoint para receber webhooks da Stripe
-app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const payload = req.body;
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+// Middleware para processar o corpo da requisição como JSON
+app.post('/webhook', express.raw({ type: 'application/json' }), (request, response) => {
+  const sig = request.headers['stripe-signature']; // Pegando a assinatura do webhook
 
   let event;
 
+  // Verificar se a assinatura é válida
   try {
-   event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-  } catch (error) {
-        console.error('Erro ao buscar produto:', error);
-        res.status(500).json({ error: "Erro ao buscar produto" });
-    }
-
-  
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    console.log('Sessão de checkout completa recebida:', session);
-
-     //Enviar detalhes do pedido por e-mail e WhatsApp
-    //await sendOrderDetailsViaEmail(session);
-    await sendOrderDetailsViaWhatsApp(session);
+    event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret); // Verificar a assinatura do webhook
+  } catch (err) {
+    // Caso a assinatura seja inválida, retornar erro
+    console.error(`Webhook Error: ${err.message}`);
+    response.status(400).send(`Webhook Error: ${err.message}`);
+    return;
   }
 
-  res.status(200).json({ received: true });
-});
+  // Manipular o evento conforme o tipo
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object; // Dados do pedido
+      console.log('Pagamento concluído', session);
+
+      // Chamar a função para enviar os detalhes do pedido via WhatsApp
+      sendOrderDetailsViaWhatsApp(session);
+      break;
+
+    case 'checkout.session.async_payment_failed':
+      console.log('Pagamento assíncrono falhou', event.data.object);
+      break;
+
+    case 'checkout.session.async_payment_succeeded':
+      console.log('Pagamento assíncrono bem-sucedido', event.data.object);
+      break;
+
+    // Outros tipos de eventos podem ser tratados aqui
+    default:
+      console.log(`Evento não tratado: ${event.type}`);
+  }
+
 
 // Função para enviar detalhes do pedido por e-mail
 //async function sendOrderDetailsViaEmail(session) {
