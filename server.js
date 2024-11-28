@@ -635,13 +635,8 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
       const session = event.data.object; // Dados do pedido
       console.log('Pagamento concluído', session);
 
-      // Recuperar itens do pedido
-      try {
-        const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-        session.line_items = lineItems.data; // Anexar itens à sessão
-
-        // Enviar os detalhes do pedido via WhatsApp
-        await sendOrderDetailsViaWhatsApp(session);
+      // Chamar a função para enviar os detalhes do pedido via WhatsApp
+      sendOrderDetailsViaWhatsApp(session);
       break;
 
     case 'checkout.session.async_payment_failed':
@@ -734,7 +729,6 @@ app.get('/success', (req, res) => {
   console.log("Página de sucesso acessada com session_id:", req.query.session_id);
   res.sendFile("success.html", { root: "public_html"  });
 });
-
 // Rota 404
 app.get('/404', (req, res) => {
   res.sendFile("404.html", { root: "public_html" });
