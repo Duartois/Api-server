@@ -600,8 +600,8 @@ app.post('/stripe-checkout', async (req, res) => {
           mode: "payment",
           line_items: lineItems,
           customer_email: email,
-          success_url: ${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID},
-          cancel_url: ${DOMAIN}/checkout
+          success_url: `${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${DOMAIN}/checkout`
       });
 
       res.json({ url: session.url });
