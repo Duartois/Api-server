@@ -635,8 +635,13 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
       const session = event.data.object; // Dados do pedido
       console.log('Pagamento concluído', session);
 
-      // Chamar a função para enviar os detalhes do pedido via WhatsApp
-      sendOrderDetailsViaWhatsApp(session);
+      // Recuperar itens do pedido
+      try {
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+        session.line_items = lineItems.data; // Anexar itens à sessão
+
+        // Enviar os detalhes do pedido via WhatsApp
+        await sendOrderDetailsViaWhatsApp(session);
       break;
 
     case 'checkout.session.async_payment_failed':
