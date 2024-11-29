@@ -619,33 +619,37 @@ async function fetchLineItems(sessionId) {
 }
 
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (request, response) => {
+    console.log('[WEBHOOK] Requisição recebida.');
+
     const sig = request.headers['stripe-signature'];
+    console.log('[WEBHOOK] Assinatura recebida:', sig);
+
     let event;
-
     try {
-    event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-} catch (err) {
-    console.error(`Webhook Error: ${err.message}`);
-    return response.status(400).send(`Webhook Error: ${err.message}`);
-}
-
+        event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+        console.log('[WEBHOOK] Evento validado:', event.type);
+    } catch (err) {
+        console.error('[WEBHOOK] Erro ao validar evento:', err.message);
+        return response.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
     if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
+        console.log('[WEBHOOK] Evento checkout.session.completed recebido.');
+        const session = event.data.object;
 
-    try {
-        const lineItems = await fetchLineItems(session.id); // Busca os itens do pedido
-        console.log('Line Items:', lineItems);
+        try {
+            const lineItems = await fetchLineItems(session.id); // Busca os itens do pedido
+            console.log('[WEBHOOK] Line Items:', lineItems);
 
-        // Envia detalhes por WhatsApp
-        await sendOrderDetailsViaWhatsApp(session, lineItems);
-    } catch (error) {
-        console.error('Erro ao processar os itens do pedido:', error);
+            // Envia detalhes por WhatsApp
+            await sendOrderDetailsViaWhatsApp(session, lineItems);
+            console.log('[WEBHOOK] Mensagem enviada pelo WhatsApp com sucesso.');
+        } catch (error) {
+            console.error('[WEBHOOK] Erro ao processar os itens do pedido:', error.message);
+        }
     }
-}
 
-
-    response.status(200).send();
+    response.status(200).send('[WEBHOOK] Evento processado com sucesso.');
 });
 
 
@@ -681,13 +685,15 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 
 // Função para enviar detalhes do pedido via WhatsApp
 async function sendOrderDetailsViaWhatsApp(session, lineItems) {
+    console.log('[TWILIO] Iniciando envio de mensagem pelo WhatsApp.');
+
     const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
     let message = `*Novo pedido confirmado!*\n\n`;
     message += `🆔 *ID do Pedido:* ${session.id}\n`;
     message += `👤 *Cliente:* ${session.customer_details.email}\n\n`;
 
-    // Detalhando os itens do pedido
+    // Adicionar detalhes dos itens do pedido
     message += `📦 *Itens do Pedido:*\n`;
     lineItems.forEach(item => {
         const name = item.price_data.product_data.name || "Produto sem nome";
@@ -695,24 +701,25 @@ async function sendOrderDetailsViaWhatsApp(session, lineItems) {
         message += `- ${name}: ${item.quantity} x R$${total.toFixed(2)}\n`;
     });
 
-    // Detalhes adicionais do pagamento
     message += `\n💰 *Total Pago:* R$${(session.amount_total / 100).toFixed(2)}\n`;
 
-    // Endereço de entrega
     if (session.shipping && session.shipping.address) {
         const address = session.shipping.address;
         message += `🏠 *Endereço de Entrega:*\n${address.line1}\n${address.city}, ${address.state}\n${address.postal_code}\n`;
     }
 
+    console.log('[TWILIO] Mensagem formatada:', message);
+
     try {
         const msg = await client.messages.create({
             body: message,
-            from: process.env.TWILIO_WHATSAPP_NUMBER,
-            to: `whatsapp:+5511958060256` // Número do dono do site
+            from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+            to: `whatsapp:+5511958060256`,
         });
-        console.log('Mensagem enviada via WhatsApp:', msg.sid);
+        console.log('[TWILIO] Mensagem enviada com sucesso. SID:', msg.sid);
     } catch (error) {
-        console.error('Erro ao enviar mensagem via WhatsApp:', error);
+        console.error('[TWILIO] Erro ao enviar mensagem pelo WhatsApp:', error.message);
+        throw error; // Propaga o erro para ser tratado no webhook
     }
 }
 
