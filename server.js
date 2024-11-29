@@ -10,7 +10,7 @@ import correios from 'correios-brasil';
 import { Client } from "@googlemaps/google-maps-services-js";
 import cors from 'cors';
 import twilio from 'twilio';
-// import nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer';
 
 
 // Configuração do Firebase
@@ -619,107 +619,66 @@ async function fetchLineItems(sessionId) {
 }
 
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (request, response) => {
-    console.log('[WEBHOOK] Requisição recebida.');
-
     const sig = request.headers['stripe-signature'];
-    console.log('[WEBHOOK] Assinatura recebida:', sig);
-
     let event;
+
     try {
         event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-        console.log('[WEBHOOK] Evento validado:', event.type);
+        console.log('[WEBHOOK] Evento recebido:', event.type);
     } catch (err) {
         console.error('[WEBHOOK] Erro ao validar evento:', err.message);
         return response.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     if (event.type === 'checkout.session.completed') {
-        console.log('[WEBHOOK] Evento checkout.session.completed recebido.');
         const session = event.data.object;
 
-        try {
-            const lineItems = await fetchLineItems(session.id); // Busca os itens do pedido
-            console.log('[WEBHOOK] Line Items:', lineItems);
+        const orderDetails = {
+            id: session.id,
+            items: await fetchLineItems(session.id),
+            total: (session.amount_total / 100).toFixed(2),
+            address: session.shipping?.address?.line1 || 'Endereço não informado',
+            customerName: session.customer_details.name || 'Nome não informado',
+        };
 
-            // Envia detalhes por WhatsApp
-            await sendOrderDetailsViaWhatsApp(session, lineItems);
-            console.log('[WEBHOOK] Mensagem enviada pelo WhatsApp com sucesso.');
-        } catch (error) {
-            console.error('[WEBHOOK] Erro ao processar os itens do pedido:', error.message);
-        }
+        console.log('[WEBHOOK] Pedido recebido:', orderDetails);
+
+        // Enviar e-mail para o dono do site
+        await sendOrderDetailsViaEmail(orderDetails);
     }
 
     response.status(200).send('[WEBHOOK] Evento processado com sucesso.');
 });
-
-
 // Função para enviar detalhes do pedido por e-mail
-//async function sendOrderDetailsViaEmail(session) {
-  //const transporter = nodemailer.createTransport({
-    //service: 'gmail',
-    //auth: {
-      //user: process.env.EMAIL_USER,
-      //pass: process.env.EMAIL_PASS
-    //}
-  //});
 
-  //const mailOptions = {
-    //from: process.env.EMAIL_USER,
-    //to: session.customer_email,
-    //subject: 'Detalhes do seu pedido',
-    //text: Seu pedido foi confirmado!\n
-      //- ID do pedido: ${session.id}
-      //- Itens: ${session.display_items.map(item => item.custom.name).join(', ')}
-      //- Total pago: R$${(session.amount_total / 100).toFixed(2)}
-      //- Endereço: ${session.shipping.address.line1}, ${session.shipping.address.city}
-    //
-  //};
-
-  //try {
-    //const info = await transporter.sendMail(mailOptions);
-    //console.log('E-mail enviado:', info.response);
-  //} catch (error) {
-    //console.error('Erro ao enviar e-mail:', error);
-  //}
-//}
-
-// Função para enviar detalhes do pedido via WhatsApp
-async function sendOrderDetailsViaWhatsApp(session, lineItems) {
-    console.log('[TWILIO] Iniciando envio de mensagem pelo WhatsApp.');
-
-    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-
-    let message = `*Novo pedido confirmado!*\n\n`;
-    message += `🆔 *ID do Pedido:* ${session.id}\n`;
-    message += `👤 *Cliente:* ${session.customer_details.email}\n\n`;
-
-    // Adicionar detalhes dos itens do pedido
-    message += `📦 *Itens do Pedido:*\n`;
-    lineItems.forEach(item => {
-        const name = item.price_data.product_data.name || "Produto sem nome";
-        const total = (item.price_data.unit_amount / 100) * item.quantity;
-        message += `- ${name}: ${item.quantity} x R$${total.toFixed(2)}\n`;
+async function sendOrderDetailsViaEmail(orderDetails) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
     });
 
-    message += `\n💰 *Total Pago:* R$${(session.amount_total / 100).toFixed(2)}\n`;
-
-    if (session.shipping && session.shipping.address) {
-        const address = session.shipping.address;
-        message += `🏠 *Endereço de Entrega:*\n${address.line1}\n${address.city}, ${address.state}\n${address.postal_code}\n`;
-    }
-
-    console.log('[TWILIO] Mensagem formatada:', message);
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: 'bichinhos.ousados@gmail.com', // E-mail do dono do site
+        subject: `Novo Pedido Recebido - Pedido Nº ${orderDetails.id}`,
+        text: `
+            Novo Pedido Confirmado!\n
+            🆔 Pedido Nº: ${orderDetails.id}\n
+            📦 Produtos:\n${orderDetails.items.map(item => `- ${item.name}: ${item.quantity}`).join('\n')}
+            💰 Total: R$ ${orderDetails.total}\n
+            📍 Endereço: ${orderDetails.address}\n
+            🧍 Cliente: ${orderDetails.customerName}
+        `,
+    };
 
     try {
-        const msg = await client.messages.create({
-            body: message,
-            from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-            to: `whatsapp:+5511958060256`,
-        });
-        console.log('[TWILIO] Mensagem enviada com sucesso. SID:', msg.sid);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('[EMAIL] E-mail enviado com sucesso:', info.response);
     } catch (error) {
-        console.error('[TWILIO] Erro ao enviar mensagem pelo WhatsApp:', error.message);
-        throw error; // Propaga o erro para ser tratado no webhook
+        console.error('[EMAIL] Erro ao enviar e-mail:', error.message);
     }
 }
 
