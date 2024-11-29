@@ -623,25 +623,27 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
     let event;
 
     try {
-        event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-    } catch (err) {
-        console.error(`Webhook Error: ${err.message}`);
-        return response.status(400).send(`Webhook Error: ${err.message}`);
-    }
+    event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+} catch (err) {
+    console.error(`Webhook Error: ${err.message}`);
+    return response.status(400).send(`Webhook Error: ${err.message}`);
+}
+
 
     if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
+    const session = event.data.object;
 
-        try {
-            const lineItems = await fetchLineItems(session.id); // Busca os itens do pedido
-            console.log('Line Items:', lineItems);
+    try {
+        const lineItems = await fetchLineItems(session.id); // Busca os itens do pedido
+        console.log('Line Items:', lineItems);
 
-            // Envia detalhes por WhatsApp
-            await sendOrderDetailsViaWhatsApp(session, lineItems);
-        } catch (error) {
-            console.error('Erro ao processar os itens do pedido:', error);
-        }
+        // Envia detalhes por WhatsApp
+        await sendOrderDetailsViaWhatsApp(session, lineItems);
+    } catch (error) {
+        console.error('Erro ao processar os itens do pedido:', error);
     }
+}
+
 
     response.status(200).send();
 });
