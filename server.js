@@ -613,47 +613,37 @@ app.post('/stripe-checkout', async (req, res) => {
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // O segredo do webhook configurado no painel da Stripe
 
-// Middleware para processar o corpo da requisição como JSON
-app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request, response) => {
-  const sig = request.headers['stripe-signature']; // Pegando a assinatura do webhook
+async function fetchLineItems(sessionId) {
+    const lineItems = await stripe.checkout.sessions.listLineItems(sessionId);
+    return lineItems.data; // Retorna os itens do pedido
+}
 
-  let event;
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (request, response) => {
+    const sig = request.headers['stripe-signature'];
+    let event;
 
-  // Verificar se a assinatura é válida
-  try {
-    event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret); // Verificar a assinatura do webhook
-  } catch (err) {
-    // Caso a assinatura seja inválida, retornar erro
-    console.error(`Webhook Error: ${err.message}`);
-    response.status(400).send(`Webhook Error: ${err.message}`);
-    return;
-  }
+    try {
+        event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+    } catch (err) {
+        console.error(`Webhook Error: ${err.message}`);
+        return response.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
-  // Manipular o evento conforme o tipo
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object; // Dados do pedido
-      console.log('Pagamento concluído', session);
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
 
-      // Chamar a função para enviar os detalhes do pedido via WhatsApp
-      sendOrderDetailsViaWhatsApp(session);
-      break;
+        try {
+            const lineItems = await fetchLineItems(session.id); // Busca os itens do pedido
+            console.log('Line Items:', lineItems);
 
-    case 'checkout.session.async_payment_failed':
-      console.log('Pagamento assíncrono falhou', event.data.object);
-      break;
+            // Envia detalhes por WhatsApp
+            await sendOrderDetailsViaWhatsApp(session, lineItems);
+        } catch (error) {
+            console.error('Erro ao processar os itens do pedido:', error);
+        }
+    }
 
-    case 'checkout.session.async_payment_succeeded':
-      console.log('Pagamento assíncrono bem-sucedido', event.data.object);
-      break;
-
-    // Outros tipos de eventos podem ser tratados aqui
-    default:
-      console.log(`Evento não tratado: ${event.type}`);
-  }
-
-  // Retornar uma resposta 200 para confirmar o recebimento do evento
-  response.status(200).send();
+    response.status(200).send();
 });
 
 
@@ -688,43 +678,43 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
 //}
 
 // Função para enviar detalhes do pedido via WhatsApp
-// Função para enviar detalhes do pedido via WhatsApp
-async function sendOrderDetailsViaWhatsApp(session) {
-  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+async function sendOrderDetailsViaWhatsApp(session, lineItems) {
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-  // Extraindo informações dos line_items da sessão
-  let message = `*Novo pedido confirmado!*\n\n`;
-  message += `🆔 *ID do Pedido:* ${session.id}\n`;
-  message += `👤 *Cliente:* ${session.customer_details.email}\n\n`;
-  
-  // Detalhando os itens do pedido
-  message += `📦 *Itens do Pedido:*\n`;
-  if (session.display_items) {
-    session.display_items.forEach(item => {
-      message += `- ${item.custom.name}: ${item.quantity} x R$${(item.amount_subtotal / 100).toFixed(2)}\n`;
+    let message = `*Novo pedido confirmado!*\n\n`;
+    message += `🆔 *ID do Pedido:* ${session.id}\n`;
+    message += `👤 *Cliente:* ${session.customer_details.email}\n\n`;
+
+    // Detalhando os itens do pedido
+    message += `📦 *Itens do Pedido:*\n`;
+    lineItems.forEach(item => {
+        const name = item.price_data.product_data.name || "Produto sem nome";
+        const total = (item.price_data.unit_amount / 100) * item.quantity;
+        message += `- ${name}: ${item.quantity} x R$${total.toFixed(2)}\n`;
     });
-  }
 
-  // Detalhes adicionais do pagamento
-  message += `\n💰 *Total Pago:* R$${(session.amount_total / 100).toFixed(2)}\n`;
+    // Detalhes adicionais do pagamento
+    message += `\n💰 *Total Pago:* R$${(session.amount_total / 100).toFixed(2)}\n`;
 
-  // Endereço de entrega
-  if (session.shipping && session.shipping.address) {
-    const address = session.shipping.address;
-    message += `🏠 *Endereço de Entrega:*\n${address.line1}\n${address.city}, ${address.state}\n${address.postal_code}\n`;
-  }
+    // Endereço de entrega
+    if (session.shipping && session.shipping.address) {
+        const address = session.shipping.address;
+        message += `🏠 *Endereço de Entrega:*\n${address.line1}\n${address.city}, ${address.state}\n${address.postal_code}\n`;
+    }
 
-  try {
-    const msg = await client.messages.create({
-      body: message,
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`, // Seu número WhatsApp Twilio
-      to: `whatsapp:+5511958060256`, // Substitua pelo número do destinatário
-    });
-    console.log('Mensagem enviada via WhatsApp:', msg.sid);
-  } catch (error) {
-    console.error('Erro ao enviar mensagem via WhatsApp:', error);
-  }
+    try {
+        const msg = await client.messages.create({
+            body: message,
+            from: process.env.TWILIO_WHATSAPP_NUMBER,
+            to: `whatsapp:+5511958060256` // Número do dono do site
+        });
+        console.log('Mensagem enviada via WhatsApp:', msg.sid);
+    } catch (error) {
+        console.error('Erro ao enviar mensagem via WhatsApp:', error);
+    }
 }
+
+
 
 app.get('/success', (req, res) => {
   console.log("Página de sucesso acessada com session_id:", req.query.session_id);
