@@ -624,8 +624,8 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
     event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret); // Verificar a assinatura do webhook
   } catch (err) {
     // Caso a assinatura seja inválida, retornar erro
-    console.error(Webhook Error: ${err.message});
-    response.status(400).send(Webhook Error: ${err.message});
+    console.error(`Webhook Error: ${err.message}`);
+    response.status(400).send(`Webhook Error: ${err.message}`);
     return;
   }
 
