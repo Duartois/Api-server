@@ -649,7 +649,7 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
 
     // Outros tipos de eventos podem ser tratados aqui
     default:
-      console.log(Evento não tratado: ${event.type});
+      console.log(`Evento não tratado: ${event.type}`);
   }
 
   // Retornar uma resposta 200 para confirmar o recebimento do evento
