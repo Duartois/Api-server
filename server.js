@@ -688,36 +688,37 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (request,
 //}
 
 // Função para enviar detalhes do pedido via WhatsApp
+// Função para enviar detalhes do pedido via WhatsApp
 async function sendOrderDetailsViaWhatsApp(session) {
   const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
   // Extraindo informações dos line_items da sessão
-  let message = *Novo pedido confirmado!*\n\n;
-  message += 🆔 *ID do Pedido:* ${session.id}\n;
-  message += 👤 *Cliente:* ${session.customer_details.email}\n\n;
+  let message = `*Novo pedido confirmado!*\n\n`;
+  message += `🆔 *ID do Pedido:* ${session.id}\n`;
+  message += `👤 *Cliente:* ${session.customer_details.email}\n\n`;
   
   // Detalhando os itens do pedido
-  message += 📦 *Itens do Pedido:*\n;
+  message += `📦 *Itens do Pedido:*\n`;
   if (session.display_items) {
     session.display_items.forEach(item => {
-      message += - ${item.custom.name}: ${item.quantity} x R$${(item.amount_subtotal / 100).toFixed(2)}\n;
+      message += `- ${item.custom.name}: ${item.quantity} x R$${(item.amount_subtotal / 100).toFixed(2)}\n`;
     });
   }
 
   // Detalhes adicionais do pagamento
-  message += \n💰 *Total Pago:* R$${(session.amount_total / 100).toFixed(2)}\n;
+  message += `\n💰 *Total Pago:* R$${(session.amount_total / 100).toFixed(2)}\n`;
 
   // Endereço de entrega
   if (session.shipping && session.shipping.address) {
     const address = session.shipping.address;
-    message += 🏠 *Endereço de Entrega:*\n${address.line1}\n${address.city}, ${address.state}\n${address.postal_code}\n;
+    message += `🏠 *Endereço de Entrega:*\n${address.line1}\n${address.city}, ${address.state}\n${address.postal_code}\n`;
   }
 
   try {
     const msg = await client.messages.create({
       body: message,
-      from: whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}, // Seu número WhatsApp Twilio
-      to: whatsapp:+5511958060256, // Substitua pelo número do destinatário
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`, // Seu número WhatsApp Twilio
+      to: `whatsapp:+5511958060256`, // Substitua pelo número do destinatário
     });
     console.log('Mensagem enviada via WhatsApp:', msg.sid);
   } catch (error) {
