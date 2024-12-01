@@ -533,7 +533,7 @@ app.get('/checkout', (req, res) => {
 const googleMapsClient = new Client({});
 
 const BASE_ZIP_CODE = '03346030'; // CEP base para o cálculo
-const FREE_SHIPPING_RADIUS_KM = 5; // Raio para frete grátis em quilômetros
+const FREE_SHIPPING_RADIUS_KM = 2; // Raio para frete grátis em quilômetros
 
 app.post('/calculate-shipping', async (req, res) => {
     const { customerZipCode } = req.body;
