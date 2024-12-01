@@ -565,7 +565,7 @@ app.post('/calculate-shipping', async (req, res) => {
                 res.json({ shippingCost, distance: distanceInKm, message: "Frete aplicado com base na distância." });
             }
         } else {
-            throw new Error(Google Maps API Error: ${response.data.rows[0].elements[0].status});
+            throw new Error(`Google Maps API Error: ${response.data.rows[0].elements[0].status}`);
         }
     } catch (error) {
         console.error('Erro ao calcular o frete:', error.message);
