@@ -531,12 +531,16 @@ app.get('/checkout', (req, res) => {
 })
 
 const googleMapsClient = new Client({});
+
 const BASE_ZIP_CODE = '03346030'; // CEP base para o cálculo
 const FREE_SHIPPING_RADIUS_KM = 5; // Raio para frete grátis em quilômetros
 
-
 app.post('/calculate-shipping', async (req, res) => {
     const { customerZipCode } = req.body;
+
+    if (!customerZipCode || customerZipCode.trim().length !== 8) {
+        return res.status(400).json({ error: 'CEP inválido. Certifique-se de enviar um CEP de 8 dígitos.' });
+    }
 
     try {
         const response = await googleMapsClient.distancematrix({
@@ -545,8 +549,10 @@ app.post('/calculate-shipping', async (req, res) => {
                 destinations: [customerZipCode],
                 key: process.env.GOOGLE_MAPS_API_KEY,
             },
-            timeout: 5000,
+            timeout: 5000, // Tempo limite para a requisição
         });
+
+        console.log('Resposta da API do Google Maps:', JSON.stringify(response.data, null, 2));
 
         if (response.data.rows[0].elements[0].status === 'OK') {
             const distanceInMeters = response.data.rows[0].elements[0].distance.value;
@@ -555,15 +561,15 @@ app.post('/calculate-shipping', async (req, res) => {
             if (distanceInKm <= FREE_SHIPPING_RADIUS_KM) {
                 res.json({ shippingCost: 0, message: "Frete grátis!" });
             } else {
-                res.json({ shippingCost: "Calculado", message: "Frete aplicado com base na distância." });
+                res.json({ shippingCost: "Calculado", distance: distanceInKm, message: "Frete aplicado com base na distância." });
             }
         } else {
-            throw new Error(`Google Maps API Error: ${response.data.rows[0].elements[0].status}`);
+            throw new Error(Google Maps API Error: ${response.data.rows[0].elements[0].status});
         }
     } catch (error) {
-        console.error('Erro ao calcular frete:', error.message);
-        res.status(500).json({ error: "Erro ao calcular o frete." });
-    }
+        console.error('Erro ao calcular o frete:', error.message);
+        res.status(500).json({ error: "Erro ao calcular o frete." });
+    }
 });
 
 //stripe payment
