@@ -549,7 +549,7 @@ app.post('/calculate-shipping', async (req, res) => {
                 destinations: [customerZipCode],
                 key: process.env.GOOGLE_MAPS_API_KEY,
             },
-            timeout: 5000, // Tempo limite para a requisição
+            timeout: 5000,
         });
 
         console.log('Resposta da API do Google Maps:', JSON.stringify(response.data, null, 2));
@@ -559,9 +559,10 @@ app.post('/calculate-shipping', async (req, res) => {
             const distanceInKm = distanceInMeters / 1000;
 
             if (distanceInKm <= FREE_SHIPPING_RADIUS_KM) {
-                res.json({ shippingCost: 0, message: "Frete grátis!" });
+                res.json({ shippingCost: 0, distance: distanceInKm, message: "Frete grátis!" });
             } else {
-                res.json({ shippingCost: "Calculado", distance: distanceInKm, message: "Frete aplicado com base na distância." });
+                const shippingCost = Math.round(Math.max(1100, Math.min(5500, distanceInKm * 150)));
+                res.json({ shippingCost, distance: distanceInKm, message: "Frete aplicado com base na distância." });
             }
         } else {
             throw new Error(Google Maps API Error: ${response.data.rows[0].elements[0].status});
