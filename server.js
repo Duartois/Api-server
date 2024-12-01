@@ -531,34 +531,39 @@ app.get('/checkout', (req, res) => {
 })
 
 const googleMapsClient = new Client({});
+const BASE_ZIP_CODE = '03346030'; // CEP base para o cálculo
+const FREE_SHIPPING_RADIUS_KM = 5; // Raio para frete grátis em quilômetros
 
-app.post('/calculate-distance', async (req, res) => {
-  const { origin, destination } = req.body;
 
-  try {
-      const response = await googleMapsClient.distancematrix({
-          params: {
-              origins: [origin],
-              destinations: [destination],
-              key: process.env.GOOGLE_MAPS_API_KEY,
-          },
-          timeout: 5000, // Aumentar o tempo limite para 5 segundos
-      });
+app.post('/calculate-shipping', async (req, res) => {
+    const { customerZipCode } = req.body;
 
-      console.log('Google Maps API Response:', response.data); // Adicionar log da resposta
+    try {
+        const response = await googleMapsClient.distancematrix({
+            params: {
+                origins: [BASE_ZIP_CODE],
+                destinations: [customerZipCode],
+                key: process.env.GOOGLE_MAPS_API_KEY,
+            },
+            timeout: 5000,
+        });
 
-      if (response.data.rows[0].elements[0].status === 'OK') {
-          const distanceInMeters = response.data.rows[0].elements[0].distance.value;
-          const distanceInKm = distanceInMeters / 1000;
+        if (response.data.rows[0].elements[0].status === 'OK') {
+            const distanceInMeters = response.data.rows[0].elements[0].distance.value;
+            const distanceInKm = distanceInMeters / 1000;
 
-          res.json({ distance: distanceInKm });
-      } else {
-          throw new Error(`Google Maps API Error: ${response.data.rows[0].elements[0].status}`);
-      }
-  } catch (error) {
-      console.error('Erro ao calcular a distância:', error.message); // Mensagem de erro mais detalhada
-      res.status(500).json({ error: "Erro ao calcular a distância." });
-  }
+            if (distanceInKm <= FREE_SHIPPING_RADIUS_KM) {
+                res.json({ shippingCost: 0, message: "Frete grátis!" });
+            } else {
+                res.json({ shippingCost: "Calculado", message: "Frete aplicado com base na distância." });
+            }
+        } else {
+            throw new Error(`Google Maps API Error: ${response.data.rows[0].elements[0].status}`);
+        }
+    } catch (error) {
+        console.error('Erro ao calcular frete:', error.message);
+        res.status(500).json({ error: "Erro ao calcular o frete." });
+    }
 });
 
 //stripe payment
