@@ -385,8 +385,13 @@ app.post('/get-products', async (req, res) => {
             productsSnapshot.forEach(item => {
                 const productData = item.data();
                 const lowerKeyword = keyword.toLowerCase(); // Normaliza a palavra-chave para minúsculas
-                const nameMatches = productData.name.toLowerCase().includes(lowerKeyword); // Verifica se o nome contém a palavra-chave
-                const tagMatches = productData.tags && productData.tags.some(tag => tag.toLowerCase().includes(lowerKeyword)); // Verifica nas tags
+
+                // Verifica se o nome existe e contém a palavra-chave
+                const nameMatches = productData.name && productData.name.toLowerCase().includes(lowerKeyword);
+
+                // Verifica se as tags existem e alguma delas contém a palavra-chave
+                const tagMatches = productData.tags && Array.isArray(productData.tags) && 
+                    productData.tags.some(tag => tag.toLowerCase().includes(lowerKeyword));
 
                 // Se o nome ou as tags corresponderem, adiciona o produto
                 if (nameMatches || tagMatches) {
