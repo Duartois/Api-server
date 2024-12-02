@@ -372,41 +372,77 @@ const pluralize = (word) => {
     }
 };
 
-app.post('/get-products', (req, res) => {
-  let { id, tag, badge } = req.body;
+app.post('/get-products', async (req, res) => {
+    const { keyword } = req.body;
 
-  let products = collection(db, "products");
-  let queryRef;
+    let products = collection(db, "products");
 
-  if (badge) {
-    queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
-  } else if (id) {
-    queryRef = getDoc(doc(products, id));
-  } else if (tag) {
-    const tagVariants = generateTagVariants(tag);
-    queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
-  } else {
-    queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por e-mail
-  }
+    try {
+        const productsSnapshot = await getDocs(products); // Obtém todos os produtos
+        let productArr = [];
 
-  queryRef
-    .then(productsSnapshot => {
-      let productArr = [];
-      if (!productsSnapshot.empty) {
-        productsSnapshot.forEach(item => {
-          let data = item.data();
-          data.id = item.id;
-          productArr.push(data);
-        });
-        res.json(productArr);
-      } else {
-        res.json('no products');
-      }
-    })
-    .catch(error => {
-      res.status(500).json({ error: 'Internal server error' });
-    });
+        if (!productsSnapshot.empty) {
+            productsSnapshot.forEach(item => {
+                const productData = item.data();
+                const lowerKeyword = keyword.toLowerCase(); // Normaliza a palavra-chave para minúsculas
+                const nameMatches = productData.name.toLowerCase().includes(lowerKeyword); // Verifica se o nome contém a palavra-chave
+                const tagMatches = productData.tags && productData.tags.some(tag => tag.toLowerCase().includes(lowerKeyword)); // Verifica nas tags
+
+                // Se o nome ou as tags corresponderem, adiciona o produto
+                if (nameMatches || tagMatches) {
+                    productData.id = item.id; // Inclui o ID do produto
+                    productArr.push(productData);
+                }
+            });
+
+            if (productArr.length > 0) {
+                res.json(productArr); // Retorna os produtos encontrados
+            } else {
+                res.json('no products'); // Caso nenhum produto corresponda
+            }
+        } else {
+            res.json('no products'); // Caso não existam produtos no Firestore
+        }
+    } catch (error) {
+        console.error('Erro ao buscar produtos:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
+//app.post('/get-products', (req, res) => {
+  //let { id, tag, badge } = req.body;
+
+  //let products = collection(db, "products");
+  //let queryRef;
+
+  //if (badge) {
+    //queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
+  //} else if (id) {
+    //queryRef = getDoc(doc(products, id));
+  //} else if (tag) {
+    //const tagVariants = generateTagVariants(tag);
+    //queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
+  //} else {
+    //queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por e-mail
+  //}
+
+  //queryRef
+    //.then(productsSnapshot => {
+      //let productArr = [];
+     // if (!productsSnapshot.empty) {
+       // productsSnapshot.forEach(item => {
+          //let data = item.data();
+          //data.id = item.id;
+          //productArr.push(data);
+        //});
+        //res.json(productArr);
+      //} else {
+        //res.json('no products');
+     // }
+    //})
+    //.catch(error => {
+     // res.status(500).json({ error: 'Internal server error' });
+    //});
+//});
 
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
