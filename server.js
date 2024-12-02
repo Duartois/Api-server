@@ -375,23 +375,31 @@ const pluralize = (word) => {
 app.post('/get-products', async (req, res) => {
     const { keyword } = req.body;
 
+    if (!keyword) {
+        return res.status(400).json({ error: 'A palavra-chave é obrigatória.' });
+    }
+
     let products = collection(db, "products");
 
     try {
         const productsSnapshot = await getDocs(products); // Obtém todos os produtos
         let productArr = [];
+        const lowerKeyword = keyword.toLowerCase(); // Normaliza a palavra-chave para minúsculas
 
         if (!productsSnapshot.empty) {
             productsSnapshot.forEach(item => {
                 const productData = item.data();
-                const lowerKeyword = keyword.toLowerCase(); // Normaliza a palavra-chave para minúsculas
 
-                // Verifica se o nome existe e contém a palavra-chave
-                const nameMatches = productData.name && productData.name.toLowerCase().includes(lowerKeyword);
+                // Log para entender o conteúdo dos dados recebidos
+                console.log('Produto recebido:', productData);
 
-                // Verifica se as tags existem e alguma delas contém a palavra-chave
-                const tagMatches = productData.tags && Array.isArray(productData.tags) && 
-                    productData.tags.some(tag => tag.toLowerCase().includes(lowerKeyword));
+                // Verifica se o campo `name` existe e é uma string válida
+                const nameMatches = productData.name && typeof productData.name === 'string' &&
+                                    productData.name.toLowerCase().includes(lowerKeyword);
+
+                // Verifica se o campo `tags` existe e é um array válido
+                const tagMatches = productData.tags && Array.isArray(productData.tags) &&
+                                   productData.tags.some(tag => typeof tag === 'string' && tag.toLowerCase().includes(lowerKeyword));
 
                 // Se o nome ou as tags corresponderem, adiciona o produto
                 if (nameMatches || tagMatches) {
@@ -409,8 +417,8 @@ app.post('/get-products', async (req, res) => {
             res.json('no products'); // Caso não existam produtos no Firestore
         }
     } catch (error) {
-        console.error('Erro ao buscar produtos:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Erro ao buscar produtos:', error.message, error.stack);
+        res.status(500).json({ error: 'Erro ao buscar produtos' });
     }
 });
 //app.post('/get-products', (req, res) => {
