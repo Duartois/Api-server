@@ -422,31 +422,36 @@ const pluralize = (word) => {
    // }
 //});
 app.post('/get-products', async (req, res) => {
-    let { badge } = req.body; // Recebe o badge enviado pelo front-end
+    let { tag } = req.body; // Termo digitado na barra de pesquisa
+
+    // Valida se o termo foi enviado
+    if (!tag || tag.trim() === '') {
+        return res.status(400).json({ error: 'O termo da pesquisa não pode estar vazio.' });
+    }
 
     let products = collection(db, "products");
-    let queryRef;
 
     try {
-        if (badge) {
-            // Busca produtos que possuam o badge especificado
-            queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
-        } else {
-            // Retorna todos os produtos se nenhum badge for especificado
-            queryRef = getDocs(products);
-        }
-
-        const productsSnapshot = await queryRef;
+        // Busca todos os produtos
+        const productsSnapshot = await getDocs(products);
 
         let productArr = [];
-        if (!productsSnapshot.empty) {
-            productsSnapshot.forEach(item => {
-                let data = item.data();
-                data.id = item.id;
-                productArr.push(data);
-            });
-        }
 
+        // Itera pelos produtos e verifica se o campo "name" contém exatamente ou parcialmente o termo
+        productsSnapshot.forEach(item => {
+            const data = item.data();
+            data.id = item.id;
+
+            // Comparação exata e parcial com normalização para evitar problemas com maiúsculas/minúsculas
+            const name = data.name ? data.name.toLowerCase().trim() : '';
+            const searchKey = tag.toLowerCase().trim();
+
+            if (name.includes(searchKey)) {
+                productArr.push(data);
+            }
+        });
+
+        // Retorna os produtos encontrados ou um array vazio se nenhum for correspondente
         res.json(productArr.length > 0 ? productArr : []);
     } catch (error) {
         console.error('Erro ao buscar produtos:', error.message);
