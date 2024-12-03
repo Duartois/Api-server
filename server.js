@@ -422,49 +422,36 @@ const pluralize = (word) => {
    // }
 //});
 app.post('/get-products', async (req, res) => {
-    let { tag } = req.body;
+    let { tag } = req.body; // "tag" é o termo digitado na barra de pesquisa, mas será usado no campo "name"
 
-    let products = collection(db, "products");
-    let queryRef;
-
-    if (tag) {
-        const tagVariants = generateTagVariants(tag);
-        console.log('Tags para pesquisa:', tagVariants); // Log para depuração
-
-        // Busca inicial por tags
-        queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
-    } else {
-        // Se nenhuma tag for enviada, retorna todos os produtos
-        queryRef = getDocs(products);
+    // Certifique-se de que o termo da pesquisa foi enviado
+    if (!tag || tag.trim() === '') {
+        return res.status(400).json({ error: 'O termo da pesquisa não pode estar vazio.' });
     }
 
+    let products = collection(db, "products");
+
     try {
-        const productsSnapshot = await queryRef;
+        // Busca todos os produtos
+        const productsSnapshot = await getDocs(products);
+
         let productArr = [];
 
-        if (!productsSnapshot.empty) {
-            productsSnapshot.forEach(item => {
-                let data = item.data();
-                data.id = item.id;
+        // Itera pelos produtos e verifica se o campo "name" contém o termo da pesquisa
+        productsSnapshot.forEach(item => {
+            const data = item.data();
+            data.id = item.id;
 
-                // Se não há tags, verifica o campo "name"
-                if (tag) {
-                    const nameMatch = data.name && data.name.toLowerCase().includes(tag.toLowerCase());
-                    const tagMatch = data.tags && data.tags.some(t => tagVariants.includes(t));
+            if (data.name && data.name.toLowerCase().includes(tag.toLowerCase())) {
+                productArr.push(data);
+            }
+        });
 
-                    if (nameMatch || tagMatch) {
-                        productArr.push(data);
-                    }
-                } else {
-                    productArr.push(data);
-                }
-            });
-        }
-
-        res.json(productArr.length > 0 ? productArr : []); // Retorna um array vazio se nada for encontrado
+        // Retorna os produtos encontrados ou um array vazio se nenhum for correspondente
+        res.json(productArr.length > 0 ? productArr : []);
     } catch (error) {
-        console.error('Error fetching products:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Erro ao buscar produtos:', error);
+        res.status(500).json({ error: 'Erro interno no servidor.' });
     }
 });
 
