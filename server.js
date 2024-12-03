@@ -421,68 +421,51 @@ const pluralize = (word) => {
         //res.status(500).json({ error: 'Erro ao buscar produtos' });
    // }
 //});
-app.post('/get-products', (req, res) => {
-    let { id, tag, badge } = req.body;
+app.post('/get-products', async (req, res) => {
+    let { tag } = req.body;
 
     let products = collection(db, "products");
     let queryRef;
 
-    if (id) {
-        queryRef = getDoc(doc(products, id));
-        queryRef
-            .then(docSnapshot => {
-                if (docSnapshot.exists()) {
-                    const data = docSnapshot.data();
-                    data.id = docSnapshot.id;
-                    res.json([data]);
-                } else {
-                    res.json([]);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching product by ID:', error);
-                res.status(500).json({ error: 'Internal server error' });
-            });
-        return;
-    }
-
-    if (badge) {
-        queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
-    } else if (tag) {
+    if (tag) {
         const tagVariants = generateTagVariants(tag);
-        console.log('Tags para pesquisa:', tagVariants);
+        console.log('Tags para pesquisa:', tagVariants); // Log para depuração
 
-        // Busca por tags ou name
+        // Busca inicial por tags
         queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
     } else {
+        // Se nenhuma tag for enviada, retorna todos os produtos
         queryRef = getDocs(products);
     }
 
-    queryRef
-        .then(productsSnapshot => {
-            let productArr = [];
-            if (!productsSnapshot.empty) {
-                productsSnapshot.forEach(item => {
-                    let data = item.data();
-                    data.id = item.id;
+    try {
+        const productsSnapshot = await queryRef;
+        let productArr = [];
 
-                    // Verificar fallback para o campo "name"
-                    if (tag && data.name && data.name.toLowerCase().includes(tag.toLowerCase())) {
-                        productArr.push(data);
-                    } else if (!tag || (data.tags && data.tags.some(t => tagVariants.includes(t)))) {
+        if (!productsSnapshot.empty) {
+            productsSnapshot.forEach(item => {
+                let data = item.data();
+                data.id = item.id;
+
+                // Se não há tags, verifica o campo "name"
+                if (tag) {
+                    const nameMatch = data.name && data.name.toLowerCase().includes(tag.toLowerCase());
+                    const tagMatch = data.tags && data.tags.some(t => tagVariants.includes(t));
+
+                    if (nameMatch || tagMatch) {
                         productArr.push(data);
                     }
-                });
+                } else {
+                    productArr.push(data);
+                }
+            });
+        }
 
-                res.json(productArr.length ? productArr : []); // Garante um array vazio se nada for encontrado
-            } else {
-                res.json([]); // Retorna array vazio se nenhum produto for encontrado
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching products:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        });
+        res.json(productArr.length > 0 ? productArr : []); // Retorna um array vazio se nada for encontrado
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // Rota para buscar produtos pelo ID
