@@ -422,33 +422,45 @@ const pluralize = (word) => {
    // }
 //});
 app.post('/get-products', async (req, res) => {
-    let { tag } = req.body; // Termo digitado na barra de pesquisa
+    const { tag, badge } = req.body; // Recebe tanto `tag` quanto `badge`
 
-    // Valida se o termo foi enviado
-    if (!tag || tag.trim() === '') {
-        return res.status(400).json({ error: 'O termo da pesquisa não pode estar vazio.' });
+    if (!tag && !badge) {
+        return res.status(400).json({ error: 'É necessário fornecer uma tag ou um badge.' });
     }
 
-    let products = collection(db, "products");
+    const productsCollection = collection(db, "products");
 
     try {
-        // Busca todos os produtos
-        const productsSnapshot = await getDocs(products);
+        let queryRef;
+
+        // Filtro por badge
+        if (badge) {
+            queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
+        }
+        // Filtro por tag
+        else if (tag) {
+            queryRef = productsCollection; // Busca todos os produtos
+        }
+
+        const productsSnapshot = await getDocs(queryRef);
 
         let productArr = [];
-        // Itera pelos produtos e verifica se o campo "name" contém exatamente ou parcialmente o termo
         productsSnapshot.forEach(item => {
             const data = item.data();
             data.id = item.id;
-            // Comparação exata e parcial com normalização para evitar problemas com maiúsculas/minúsculas
-            const name = data.name ? data.name.toLowerCase().trim() : '';
-            const searchKey = tag.toLowerCase().trim();
-            if (name.includes(searchKey)) {
-                productArr.push(data);
+
+            // Caso seja filtro por tag, verifica se o nome contém o termo
+            if (tag) {
+                const name = data.name ? data.name.toLowerCase().trim() : '';
+                const searchKey = tag.toLowerCase().trim();
+                if (name.includes(searchKey)) {
+                    productArr.push(data);
+                }
+            } else {
+                productArr.push(data); // Filtro por badge já garante que os produtos são válidos
             }
         });
 
-        // Retorna os produtos encontrados ou um array vazio se nenhum for correspondente
         res.json(productArr.length > 0 ? productArr : []);
     } catch (error) {
         console.error('Erro ao buscar produtos:', error.message);
