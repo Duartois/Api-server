@@ -422,39 +422,30 @@ const pluralize = (word) => {
    // }
 //});
 app.post('/get-products', async (req, res) => {
-    let { tag } = req.body; // Termo digitado na barra de pesquisa
+    const { badge } = req.body;
 
-    // Valida se o termo foi enviado
-    if (!tag || tag.trim() === '') {
-        return res.status(400).json({ error: 'O termo da pesquisa não pode estar vazio.' });
+    if (!badge) {
+        return res.status(400).json({ error: 'Badge não fornecido na requisição.' });
     }
 
-    let products = collection(db, "products");
+    const products = collection(db, "products");
 
     try {
-        // Busca todos os produtos
-        const productsSnapshot = await getDocs(products);
+        // Consulta produtos que correspondem ao badge solicitado
+        const productsSnapshot = await getDocs(query(products, where(`badges.${badge}`, '==', true)));
 
         let productArr = [];
-
-        // Itera pelos produtos e verifica se o campo "name" contém exatamente ou parcialmente o termo
-        productsSnapshot.forEach(item => {
-            const data = item.data();
-            data.id = item.id;
-
-            // Comparação exata e parcial com normalização para evitar problemas com maiúsculas/minúsculas
-            const name = data.name ? data.name.toLowerCase().trim() : '';
-            const searchKey = tag.toLowerCase().trim();
-
-            if (name.includes(searchKey)) {
+        if (!productsSnapshot.empty) {
+            productsSnapshot.forEach(doc => {
+                let data = doc.data();
+                data.id = doc.id;
                 productArr.push(data);
-            }
-        });
+            });
+        }
 
-        // Retorna os produtos encontrados ou um array vazio se nenhum for correspondente
-        res.json(productArr.length > 0 ? productArr : []);
+        res.json(productArr);
     } catch (error) {
-        console.error('Erro ao buscar produtos:', error.message);
+        console.error(`Erro ao buscar produtos com o badge ${badge}:`, error.message);
         res.status(500).json({ error: 'Erro interno ao buscar produtos.' });
     }
 });
