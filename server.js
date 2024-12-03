@@ -422,63 +422,68 @@ const pluralize = (word) => {
    // }
 //});
 app.post('/get-products', (req, res) => {
-  let { id, tag, badge } = req.body;
+    let { id, tag, badge } = req.body;
 
-  let products = collection(db, "products");
-  let queryRef;
+    let products = collection(db, "products");
+    let queryRef;
 
-  if (id) {
-    queryRef = getDoc(doc(products, id));
-    queryRef
-      .then(docSnapshot => {
-        if (docSnapshot.exists()) {
-          const data = docSnapshot.data();
-          data.id = docSnapshot.id;
-          res.json([data]);
-        } else {
-          res.json([]);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching product by ID:', error);
-        res.status(500).json({ error: 'Internal server error' });
-      });
-    return;
-  }
-
-  if (badge) {
-    queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
-  } else if (tag) {
-    const tagVariants = generateTagVariants(tag);
-    if (!tagVariants.length) {
-      res.json([]);
-      return;
+    if (id) {
+        queryRef = getDoc(doc(products, id));
+        queryRef
+            .then(docSnapshot => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    data.id = docSnapshot.id;
+                    res.json([data]);
+                } else {
+                    res.json([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching product by ID:', error);
+                res.status(500).json({ error: 'Internal server error' });
+            });
+        return;
     }
-    queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
-  } else {
-    queryRef = getDocs(products);
-  }
 
-  queryRef
-    .then(productsSnapshot => {
-      let productArr = [];
-      if (!productsSnapshot.empty) {
-        productsSnapshot.forEach(item => {
-          let data = item.data();
-          data.id = item.id;
-          productArr.push(data);
+    if (badge) {
+        queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
+    } else if (tag) {
+        const tagVariants = generateTagVariants(tag);
+        console.log('Tags para pesquisa:', tagVariants);
+
+        // Busca por tags ou name
+        queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
+    } else {
+        queryRef = getDocs(products);
+    }
+
+    queryRef
+        .then(productsSnapshot => {
+            let productArr = [];
+            if (!productsSnapshot.empty) {
+                productsSnapshot.forEach(item => {
+                    let data = item.data();
+                    data.id = item.id;
+
+                    // Verificar fallback para o campo "name"
+                    if (tag && data.name && data.name.toLowerCase().includes(tag.toLowerCase())) {
+                        productArr.push(data);
+                    } else if (!tag || (data.tags && data.tags.some(t => tagVariants.includes(t)))) {
+                        productArr.push(data);
+                    }
+                });
+
+                res.json(productArr.length ? productArr : []); // Garante um array vazio se nada for encontrado
+            } else {
+                res.json([]); // Retorna array vazio se nenhum produto for encontrado
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching products:', error);
+            res.status(500).json({ error: 'Internal server error' });
         });
-        res.json(productArr);
-      } else {
-        res.json([]);
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching products:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    });
 });
-
 
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
