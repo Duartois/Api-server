@@ -372,21 +372,91 @@ const pluralize = (word) => {
     }
 };
 
+//app.post('/get-products', async (req, res) => {
+  //  const { keyword } = req.body;
+
+    //if (!keyword) {
+        //return res.status(400).json({ error: 'A palavra-chave é obrigatória.' });
+    //}
+
+    //let products = collection(db, "products");
+
+   //  try {
+        //const productsSnapshot = await getDocs(products); // Obtém todos os produtos
+       // let productArr = [];
+        //const lowerKeyword = keyword.toLowerCase(); // Normaliza a palavra-chave para minúsculas
+
+        //if (!productsSnapshot.empty) {
+            //productsSnapshot.forEach(item => {
+               // const productData = item.data();
+
+                // Log para entender o conteúdo dos dados recebidos
+               // console.log('Produto recebido:', productData);
+
+                // Verifica se o campo `name` existe e é uma string válida
+               // const nameMatches = productData.name && typeof productData.name === 'string' &&
+                                  //  productData.name.toLowerCase().includes(lowerKeyword);
+
+                // Verifica se o campo `tags` existe e é um array válido
+               // const tagMatches = productData.tags && Array.isArray(productData.tags) &&
+                                //   productData.tags.some(tag => typeof tag === 'string' && tag.toLowerCase().includes(lowerKeyword));
+
+                // Se o nome ou as tags corresponderem, adiciona o produto
+             //   if (nameMatches || tagMatches) {
+                  //  productData.id = item.id; // Inclui o ID do produto
+                //    productArr.push(productData);
+            //    }
+         //   });
+
+           // if (productArr.length > 0) {
+              //  res.json(productArr); // Retorna os produtos encontrados
+           // } else {
+             //   res.json('no products'); // Caso nenhum produto corresponda
+           // }
+    //    } else {
+            //res.json('no products'); // Caso não existam produtos no Firestore
+       // }
+    //} catch (error) {
+       // console.error('Erro ao buscar produtos:', error.message, error.stack);
+        //res.status(500).json({ error: 'Erro ao buscar produtos' });
+   // }
+//});
 app.post('/get-products', (req, res) => {
   let { id, tag, badge } = req.body;
 
   let products = collection(db, "products");
   let queryRef;
 
+  if (id) {
+    queryRef = getDoc(doc(products, id));
+    queryRef
+      .then(docSnapshot => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          data.id = docSnapshot.id;
+          res.json([data]);
+        } else {
+          res.json([]);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching product by ID:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      });
+    return;
+  }
+
   if (badge) {
     queryRef = getDocs(query(products, where(`badges.${badge}`, '==', true)));
-  } else if (id) {
-  queryRef = getDoc(doc(products, id));
   } else if (tag) {
     const tagVariants = generateTagVariants(tag);
+    if (!tagVariants.length) {
+      res.json([]);
+      return;
+    }
     queryRef = getDocs(query(products, where("tags", "array-contains-any", tagVariants)));
   } else {
-    queryRef = getDocs(products);  // Obter todos os produtos sem filtrar por e-mail
+    queryRef = getDocs(products);
   }
 
   queryRef
@@ -400,13 +470,15 @@ app.post('/get-products', (req, res) => {
         });
         res.json(productArr);
       } else {
-        res.json('no products');
+        res.json([]);
       }
     })
     .catch(error => {
+      console.error('Error fetching products:', error);
       res.status(500).json({ error: 'Internal server error' });
     });
 });
+
 
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
