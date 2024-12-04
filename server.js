@@ -446,7 +446,7 @@ app.get('/product/:id', async (req, res) => {
 
 
 // Rota de busca
-app.get('/search/:searchkey', (req, res) => {
+app.get('/category/:key', (req, res) => {
 res.sendFile("category.html", { root: "public_html" });
 });
 
