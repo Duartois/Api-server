@@ -446,8 +446,8 @@ app.get('/product/:id', async (req, res) => {
 
 
 // Rota de busca
-app.get('/search/:key', (req, res) => {
-res.sendFile("search.html", { root: "public_html" });
+app.get('/search/:searchkey', (req, res) => {
+res.sendFile("category.html", { root: "public_html" });
 });
 
 // Rota para deletar produtos
