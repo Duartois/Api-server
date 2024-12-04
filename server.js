@@ -371,48 +371,29 @@ const pluralize = (word) => {
         return word + 's';
     }
 };
-
 app.post('/get-products', async (req, res) => {
-    const { tag, badge, email } = req.body;
+    const { tag } = req.body;
 
-    if (!tag && !badge && !email) {
-        return res.status(400).json({ error: 'É necessário fornecer uma tag, um badge ou um email.' });
+    if (!tag) {
+        return res.status(400).json({ error: 'O termo da pesquisa não pode estar vazio.' });
     }
 
     const productsCollection = collection(db, "products");
 
     try {
-        let queryRef;
-
-        // Filtro por email
-        if (email) {
-            queryRef = query(productsCollection, where("email", "==", email));
-        }
-        // Filtro por badge
-        else if (badge) {
-            queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
-        }
-        // Filtro por tag
-        else if (tag) {
-            queryRef = productsCollection; // Busca todos os produtos (se necessário, ajuste para filtrar)
-        }
-
-        const productsSnapshot = await getDocs(queryRef);
+        const productsSnapshot = await getDocs(productsCollection);
 
         let productArr = [];
         productsSnapshot.forEach(item => {
             const data = item.data();
             data.id = item.id;
 
-            // Para filtro por tag, verifica se o nome contém o termo
-            if (tag) {
-                const name = data.name ? data.name.toLowerCase().trim() : '';
-                const searchKey = tag.toLowerCase().trim();
-                if (name.includes(searchKey)) {
-                    productArr.push(data);
-                }
-            } else {
-                productArr.push(data); // Para email ou badge, adiciona diretamente
+            // Verifica a semelhança entre o nome do produto e a tag pesquisada
+            const productName = data.name ? data.name.toLowerCase().trim() : '';
+            const searchKey = tag.toLowerCase().trim();
+
+            if (isSimilar(productName, searchKey)) {
+                productArr.push(data);
             }
         });
 
@@ -422,6 +403,33 @@ app.post('/get-products', async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao buscar produtos.' });
     }
 });
+
+// Função para determinar se o nome do produto é semelhante ao termo pesquisado
+const isSimilar = (productName, searchKey) => {
+    const maxDistance = 2; // Define o número máximo de diferenças permitidas
+    return levenshteinDistance(productName, searchKey) <= maxDistance;
+};
+
+// Função para calcular a distância de Levenshtein (aproximação de strings)
+const levenshteinDistance = (a, b) => {
+    const matrix = Array.from({ length: a.length + 1 }, () => []);
+
+    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,    // Exclusão
+                matrix[i][j - 1] + 1,    // Inserção
+                matrix[i - 1][j - 1] + cost // Substituição
+            );
+        }
+    }
+
+    return matrix[a.length][b.length];
+};
 
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
