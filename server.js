@@ -372,60 +372,11 @@ const pluralize = (word) => {
     }
 };
 
-//app.post('/get-products', async (req, res) => {
-  //  const { keyword } = req.body;
-
-    //if (!keyword) {
-        //return res.status(400).json({ error: 'A palavra-chave é obrigatória.' });
-    //}
-
-    //let products = collection(db, "products");
-
-   //  try {
-        //const productsSnapshot = await getDocs(products); // Obtém todos os produtos
-       // let productArr = [];
-        //const lowerKeyword = keyword.toLowerCase(); // Normaliza a palavra-chave para minúsculas
-
-        //if (!productsSnapshot.empty) {
-            //productsSnapshot.forEach(item => {
-               // const productData = item.data();
-
-                // Log para entender o conteúdo dos dados recebidos
-               // console.log('Produto recebido:', productData);
-
-                // Verifica se o campo `name` existe e é uma string válida
-               // const nameMatches = productData.name && typeof productData.name === 'string' &&
-                                  //  productData.name.toLowerCase().includes(lowerKeyword);
-
-                // Verifica se o campo `tags` existe e é um array válido
-               // const tagMatches = productData.tags && Array.isArray(productData.tags) &&
-                                //   productData.tags.some(tag => typeof tag === 'string' && tag.toLowerCase().includes(lowerKeyword));
-
-                // Se o nome ou as tags corresponderem, adiciona o produto
-             //   if (nameMatches || tagMatches) {
-                  //  productData.id = item.id; // Inclui o ID do produto
-                //    productArr.push(productData);
-            //    }
-         //   });
-
-           // if (productArr.length > 0) {
-              //  res.json(productArr); // Retorna os produtos encontrados
-           // } else {
-             //   res.json('no products'); // Caso nenhum produto corresponda
-           // }
-    //    } else {
-            //res.json('no products'); // Caso não existam produtos no Firestore
-       // }
-    //} catch (error) {
-       // console.error('Erro ao buscar produtos:', error.message, error.stack);
-        //res.status(500).json({ error: 'Erro ao buscar produtos' });
-   // }
-//});
 app.post('/get-products', async (req, res) => {
-    const { tag, badge } = req.body; // Recebe tanto `tag` quanto `badge`
+    const { tag, badge, email } = req.body;
 
-    if (!tag && !badge) {
-        return res.status(400).json({ error: 'É necessário fornecer uma tag ou um badge.' });
+    if (!tag && !badge && !email) {
+        return res.status(400).json({ error: 'É necessário fornecer uma tag, um badge ou um email.' });
     }
 
     const productsCollection = collection(db, "products");
@@ -433,13 +384,17 @@ app.post('/get-products', async (req, res) => {
     try {
         let queryRef;
 
+        // Filtro por email
+        if (email) {
+            queryRef = query(productsCollection, where("email", "==", email));
+        }
         // Filtro por badge
-        if (badge) {
+        else if (badge) {
             queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
         }
         // Filtro por tag
         else if (tag) {
-            queryRef = productsCollection; // Busca todos os produtos
+            queryRef = productsCollection; // Busca todos os produtos (se necessário, ajuste para filtrar)
         }
 
         const productsSnapshot = await getDocs(queryRef);
@@ -449,7 +404,7 @@ app.post('/get-products', async (req, res) => {
             const data = item.data();
             data.id = item.id;
 
-            // Caso seja filtro por tag, verifica se o nome contém o termo
+            // Para filtro por tag, verifica se o nome contém o termo
             if (tag) {
                 const name = data.name ? data.name.toLowerCase().trim() : '';
                 const searchKey = tag.toLowerCase().trim();
@@ -457,7 +412,7 @@ app.post('/get-products', async (req, res) => {
                     productArr.push(data);
                 }
             } else {
-                productArr.push(data); // Filtro por badge já garante que os produtos são válidos
+                productArr.push(data); // Para email ou badge, adiciona diretamente
             }
         });
 
@@ -467,6 +422,7 @@ app.post('/get-products', async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao buscar produtos.' });
     }
 });
+
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
     const productId = req.params.id;  // Obtém o ID do produto da URL
