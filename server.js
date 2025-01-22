@@ -374,6 +374,7 @@ const pluralize = (word) => {
 app.post('/get-products', async (req, res) => {
     const { tag, badge, email, searchParam } = req.body;
 
+    // Caso nenhum parâmetro seja enviado
     if (!tag && !badge && !email && !searchParam) {
         return res.status(400).json({ error: 'É necessário fornecer pelo menos um parâmetro de busca.' });
     }
@@ -381,7 +382,7 @@ app.post('/get-products', async (req, res) => {
     const productsCollection = collection(db, "products");
 
     try {
-        let queryRef = productsCollection;
+        let queryRef;
 
         // Filtro por email
         if (email) {
@@ -393,17 +394,19 @@ app.post('/get-products', async (req, res) => {
         }
         // Filtro por tag
         else if (tag) {
-            queryRef = productsCollection; // Busca todos os produtos para filtragem por tag
+            queryRef = productsCollection; // Busca todos os produtos para filtrar localmente
+        } else if (searchParam) {
+            queryRef = productsCollection; // Busca todos os produtos para filtrar por searchParam
         }
 
-        const productsSnapshot = await getDocs(queryRef);
+        const productsSnapshot = await getDocs(queryRef || productsCollection);
         const productArr = [];
 
         productsSnapshot.forEach((item) => {
             const data = item.data();
             const { name = "", id = "", category = "" } = data;
 
-            // Filtro adicional por searchParam (comparação com name, id, category)
+            // Adiciona produtos ao array
             if (searchParam) {
                 const searchKey = searchParam.toLowerCase().trim();
 
@@ -415,7 +418,6 @@ app.post('/get-products', async (req, res) => {
                     productArr.push({ ...data, id: item.id });
                 }
             } else {
-                // Adiciona todos os produtos para tag, badge ou email
                 productArr.push({ ...data, id: item.id });
             }
         });
