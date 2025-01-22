@@ -371,47 +371,31 @@ const pluralize = (word) => {
         return word + 's';
     }
 };
-app.post('/get-products', async (req, res) => {
-    const { tag, badge, email } = req.body;
+app.app.post('/get-products', async (req, res) => {
+    const { searchParam } = req.body;
 
-    if (!tag && !badge && !email) {
-        return res.status(400).json({ error: 'É necessário fornecer uma tag, um badge ou um email.' });
+    if (!searchParam || !searchParam.trim()) {
+        return res.status(400).json({ error: 'O parâmetro de busca é necessário.' });
     }
 
     const productsCollection = collection(db, "products");
+    const searchKey = searchParam.toLowerCase().trim();
 
     try {
-        let queryRef;
+        const productsSnapshot = await getDocs(productsCollection);
+        const productArr = [];
 
-        // Filtro por email
-        if (email) {
-            queryRef = query(productsCollection, where("email", "==", email));
-        }
-        // Filtro por badge
-        else if (badge) {
-            queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
-        }
-        // Filtro por tag
-        else if (tag) {
-            queryRef = productsCollection; // Busca todos os produtos (se necessário, ajuste para filtrar)
-        }
-
-        const productsSnapshot = await getDocs(queryRef);
-
-        let productArr = [];
-        productsSnapshot.forEach(item => {
+        productsSnapshot.forEach((item) => {
             const data = item.data();
-            data.id = item.id;
+            const { name = "", id = "", category = "" } = data;
 
-            // Para filtro por tag, verifica se o nome contém o termo
-            if (tag) {
-                const name = data.name ? data.name.toLowerCase().trim() : '';
-                const searchKey = tag.toLowerCase().trim();
-                if (name.includes(searchKey)) {
-                    productArr.push(data);
-                }
-            } else {
-                productArr.push(data); // Para email ou badge, adiciona diretamente
+            // Verifica se a palavra-chave aparece em name, id ou category
+            if (
+                name.toLowerCase().includes(searchKey) ||
+                id.toLowerCase().includes(searchKey) ||
+                category.toLowerCase().includes(searchKey)
+            ) {
+                productArr.push({ ...data, id: item.id });
             }
         });
 
@@ -420,6 +404,7 @@ app.post('/get-products', async (req, res) => {
         console.error('Erro ao buscar produtos:', error.message);
         res.status(500).json({ error: 'Erro interno ao buscar produtos.' });
     }
+});
 });
 
 // Rota para buscar produtos pelo ID
