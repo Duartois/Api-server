@@ -435,21 +435,6 @@ app.post('/get-products', async (req, res) => {
 });
 
 
-api.post('/get-products', { name: productName }) // Enviar 'name' no corpo da requisição
-    .then(res => {
-        const data = res.data;
-        console.log('Produtos encontrados:', data);
-        if (Array.isArray(data) && data.length > 0) {
-            updateProductList(data); // Atualizar a interface com os produtos encontrados
-        } else {
-            console.warn('Nenhum produto encontrado com o nome especificado:', productName);
-        }
-    })
-    .catch(error => {
-        console.error('Erro ao buscar produtos:', error.response?.data || error.message);
-    });
-
-
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
     const productId = req.params.id;  // Obtém o ID do produto da URL
