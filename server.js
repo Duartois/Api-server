@@ -372,10 +372,10 @@ const pluralize = (word) => {
     }
 };
 app.post('/get-products', async (req, res) => {
-    const { tag, badge, email, name } = req.body; // Adicionar 'name'
+    const { tag, badge, email } = req.body;
 
-    if (!tag && !badge && !email && !name) { // Adicionar 'name' à validação
-        return res.status(400).json({ error: 'É necessário fornecer uma tag, um badge, um email ou um nome.' });
+    if (!tag && !badge && !email) {
+        return res.status(400).json({ error: 'É necessário fornecer uma tag, um badge ou um email.' });
     }
 
     const productsCollection = collection(db, "products");
@@ -393,11 +393,7 @@ app.post('/get-products', async (req, res) => {
         }
         // Filtro por tag
         else if (tag) {
-            queryRef = productsCollection; // Busca todos os produtos para filtragem por tag no backend
-        }
-        // Filtro por nome
-        else if (name) {
-            queryRef = productsCollection; // Busca todos os produtos para filtragem por nome
+            queryRef = productsCollection; // Busca todos os produtos (se necessário, ajuste para filtrar)
         }
 
         const productsSnapshot = await getDocs(queryRef);
@@ -407,19 +403,11 @@ app.post('/get-products', async (req, res) => {
             const data = item.data();
             data.id = item.id;
 
-            // Filtro por tag
+            // Para filtro por tag, verifica se o nome contém o termo
             if (tag) {
-                const productTag = data.tag ? data.tag.toLowerCase().trim() : '';
+                const name = data.name ? data.name.toLowerCase().trim() : '';
                 const searchKey = tag.toLowerCase().trim();
-                if (productTag.includes(searchKey)) {
-                    productArr.push(data);
-                }
-            }
-            // Filtro por nome
-            else if (name) {
-                const productName = data.name ? data.name.toLowerCase().trim() : '';
-                const searchKey = name.toLowerCase().trim();
-                if (productName.includes(searchKey)) {
+                if (name.includes(searchKey)) {
                     productArr.push(data);
                 }
             } else {
@@ -433,7 +421,6 @@ app.post('/get-products', async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao buscar produtos.' });
     }
 });
-
 
 // Rota para buscar produtos pelo ID
 app.get('/product/:id', async (req, res) => {
