@@ -372,9 +372,9 @@ const pluralize = (word) => {
     }
 };
 app.post('/get-products', async (req, res) => {
-    const { tag, badge, email, id, name, category } = req.body;
+    const { tag, badge, email, searchParam } = req.body;
 
-    if (!tag && !badge && !email && !id && !name && !category) {
+    if (!tag && !badge && !email && !searchParam) {
         return res.status(400).json({ error: 'É necessário fornecer pelo menos um parâmetro de busca.' });
     }
 
@@ -383,26 +383,41 @@ app.post('/get-products', async (req, res) => {
     try {
         let queryRef = productsCollection;
 
-        // Caso específico para cada parâmetro
+        // Filtro por email
         if (email) {
             queryRef = query(productsCollection, where("email", "==", email));
-        } else if (badge) {
+        }
+        // Filtro por badge
+        else if (badge) {
             queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
-        } else if (id) {
-            queryRef = query(productsCollection, where("id", "==", id));
-        } else if (name) {
-            queryRef = query(productsCollection, where("name", ">=", name), where("name", "<", name + "\uf8ff"));
-        } else if (category) {
-            queryRef = query(productsCollection, where("category", "==", category));
+        }
+        // Filtro por tag
+        else if (tag) {
+            queryRef = productsCollection; // Busca todos os produtos para filtragem por tag
         }
 
         const productsSnapshot = await getDocs(queryRef);
         const productArr = [];
 
-        // Adiciona os produtos encontrados ao array
         productsSnapshot.forEach((item) => {
             const data = item.data();
-            productArr.push({ ...data, id: item.id });
+            const { name = "", id = "", category = "" } = data;
+
+            // Filtro adicional por searchParam (comparação com name, id, category)
+            if (searchParam) {
+                const searchKey = searchParam.toLowerCase().trim();
+
+                if (
+                    name.toLowerCase().includes(searchKey) ||
+                    id.toLowerCase().includes(searchKey) ||
+                    category.toLowerCase().includes(searchKey)
+                ) {
+                    productArr.push({ ...data, id: item.id });
+                }
+            } else {
+                // Adiciona todos os produtos para tag, badge ou email
+                productArr.push({ ...data, id: item.id });
+            }
         });
 
         res.json(productArr.length > 0 ? productArr : []);
