@@ -372,10 +372,10 @@ const pluralize = (word) => {
     }
 };
 app.post('/get-products', async (req, res) => {
-    const { tag, badge, email } = req.body;
+    const { tag, badge, email, name } = req.body; // Adicionar 'name'
 
-    if (!tag && !badge && !email) {
-        return res.status(400).json({ error: 'É necessário fornecer uma tag, um badge ou um email.' });
+    if (!tag && !badge && !email && !name) { // Adicionar 'name' à validação
+        return res.status(400).json({ error: 'É necessário fornecer uma tag, um badge, um email ou um nome.' });
     }
 
     const productsCollection = collection(db, "products");
@@ -393,7 +393,11 @@ app.post('/get-products', async (req, res) => {
         }
         // Filtro por tag
         else if (tag) {
-            queryRef = productsCollection; // Busca todos os produtos (se necessário, ajuste para filtrar)
+            queryRef = productsCollection; // Busca todos os produtos para filtragem por tag no backend
+        }
+        // Filtro por nome
+        else if (name) {
+            queryRef = productsCollection; // Busca todos os produtos para filtragem por nome
         }
 
         const productsSnapshot = await getDocs(queryRef);
@@ -403,11 +407,19 @@ app.post('/get-products', async (req, res) => {
             const data = item.data();
             data.id = item.id;
 
-            // Para filtro por tag, verifica se o nome contém o termo
+            // Filtro por tag
             if (tag) {
-                const name = data.name ? data.name.toLowerCase().trim() : '';
+                const productTag = data.tag ? data.tag.toLowerCase().trim() : '';
                 const searchKey = tag.toLowerCase().trim();
-                if (name.includes(searchKey)) {
+                if (productTag.includes(searchKey)) {
+                    productArr.push(data);
+                }
+            }
+            // Filtro por nome
+            else if (name) {
+                const productName = data.name ? data.name.toLowerCase().trim() : '';
+                const searchKey = name.toLowerCase().trim();
+                if (productName.includes(searchKey)) {
                     productArr.push(data);
                 }
             } else {
@@ -421,6 +433,21 @@ app.post('/get-products', async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao buscar produtos.' });
     }
 });
+
+
+api.post('/get-products', { name: productName }) // Enviar 'name' no corpo da requisição
+    .then(res => {
+        const data = res.data;
+        console.log('Produtos encontrados:', data);
+        if (Array.isArray(data) && data.length > 0) {
+            updateProductList(data); // Atualizar a interface com os produtos encontrados
+        } else {
+            console.warn('Nenhum produto encontrado com o nome especificado:', productName);
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao buscar produtos:', error.response?.data || error.message);
+    });
 
 
 // Rota para buscar produtos pelo ID
