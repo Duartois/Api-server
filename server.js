@@ -15,7 +15,7 @@ import nodemailer from 'nodemailer';
 
 // Configuração do Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyA-mVyy_yJsJx7TgKAoLb8KADo6583FxI4",
+  apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "site-fullstack-bo.firebaseapp.com",
   projectId: "site-fullstack-bo",
   storageBucket: "site-fullstack-bo.appspot.com",
