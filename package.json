@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "prod": "node server.js",
-    "heroku-postbuild": "npm install"
+    "prod": "node server.js"
   },
   "author": "",
   "license": "ISC",
