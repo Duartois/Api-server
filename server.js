@@ -292,7 +292,8 @@ const isPopularProduct = (salesCount) => {
 };
 
 app.post('/add-product', (req, res) => {
-    let { name, shortDes, detail, price, image, tags = [], email, draft, oldPrice, savePrice, id, createdAt, salesCount } = req.body;
+    let { name, shortDes, detail, price, images = [], tags = [], email, draft, oldPrice, savePrice, id, createdAt, salesCount } = req.body;
+
 
     // Validação dos campos obrigatórios
     if (!draft) {
