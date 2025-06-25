@@ -293,54 +293,47 @@ const isPopularProduct = (salesCount) => {
 };
 
 app.post('/add-product', (req, res) => {
-    let { name, shortDes, detail, price, images = [], tags = [], email, draft, oldPrice, savePrice, id, createdAt, salesCount } = req.body;
-
+    let { name, shortDes, detail, price, images = [], tags = [], email, draft, oldPrice, savePrice, id, createdAt, salesCount, category } = req.body;
 
     // Validação dos campos obrigatórios
     if (!draft) {
-        if (!name.length) {
-            return res.json({ 'alert': 'Precisa adicionar um nome ao produto' });
-        } else if (!price.length || isNaN(Number(price))) {
-            return res.json({ 'alert': 'Adicione um preço válido' });
-        } else if (oldPrice && (!oldPrice.length || isNaN(Number(oldPrice)))) {
-            return res.json({ 'alert': 'Adicione um valor antigo válido se aplicável' });
-        } else if (savePrice && (!savePrice.length || isNaN(Number(savePrice)))) {
-            return res.json({ 'alert': 'Adicione um desconto válido se aplicável' });
-        } else if (!shortDes.length) {
-            return res.json({ 'alert': 'Precisa adicionar uma curta descrição' });
-        } else if (!detail.length) {
-            return res.json({ 'alert': 'Precisa adicionar uma descrição' });
-        }
+        if (!name || !name.length) return res.json({ alert: 'Precisa adicionar um nome ao produto' });
+        if (!price || !price.length || isNaN(Number(price))) return res.json({ alert: 'Adicione um preço válido' });
+        if (oldPrice && (!oldPrice.length || isNaN(Number(oldPrice)))) return res.json({ alert: 'Adicione um valor antigo válido se aplicável' });
+        if (savePrice && (!savePrice.length || isNaN(Number(savePrice)))) return res.json({ alert: 'Adicione um desconto válido se aplicável' });
+        if (!shortDes || !shortDes.length) return res.json({ alert: 'Precisa adicionar uma curta descrição' });
+        if (!detail || !detail.length) return res.json({ alert: 'Precisa adicionar uma descrição' });
+        if (!category || !category.length) return res.json({ alert: 'Precisa adicionar uma categoria' });
     }
 
-    // Garantir que o oldPrice e savePrice são consistentes
     if (savePrice && !oldPrice) {
-        return res.json({ 'alert': 'Adicione um valor antigo (oldPrice) se estiver adicionando um desconto (savePrice)' });
+        return res.json({ alert: 'Adicione um valor antigo (oldPrice) se estiver adicionando um desconto (savePrice)' });
     }
 
-    // Define o ID do produto
     let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
 
-    // Adicionar as badges conforme os critérios de popular, novo, destaque
     let productWithBadges = {
         ...req.body,
         id: docName,
         badges: {
             new: isNewProduct(createdAt),
-            featured: savePrice ? isFeaturedProduct(req.body) : false,  // Destaque só se houver savePrice
+            featured: savePrice ? isFeaturedProduct(req.body) : false,
             popular: isPopularProduct(salesCount)
         }
     };
 
-    // Armazena o produto na coleção "products"
-    let products = collection(db, "products");
+    const products = collection(db, "products");
+
     setDoc(doc(products, docName), productWithBadges)
         .then(() => {
-            res.json({ 'product': name });
+            res.status(200).json({
+                success: true,
+                product: productWithBadges
+            });
         })
         .catch(err => {
-            console.error('Erro ao adicionar produto:', err); 
-            res.status(500).json({ 'alert': 'Ocorreu algum erro no servidor' });
+            console.error('Erro ao adicionar produto:', err);
+            res.status(500).json({ alert: 'Ocorreu algum erro no servidor' });
         });
 });
 const generateTagVariants = (tag) => {
