@@ -35,7 +35,8 @@ const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
   'https://www.bichinhosousados.com',
-  'https://bichinhosousados.com'
+  'https://bichinhosousados.com',
+  'https://api-server-orcin.vercel.app'
 ];
 
 const corsOptions = {
