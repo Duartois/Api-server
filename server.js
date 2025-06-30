@@ -247,8 +247,8 @@ app.get('/add-product', (req, res) => {
   res.sendFile('add-product.html', { root: "public_html"});
 });
 // Rota para editar o produto
-app.get('/add-product/:id', async (req, res) => {
-    const productId = req.params.id; // Obtém o ID do produto da URL
+app.get('/add-product-data', async (req, res) => {
+  const productId = req.query.id;
     console.log("Product ID recebido:", productId);
     const products = collection(db, "products");
 
@@ -424,8 +424,8 @@ app.post('/get-products', async (req, res) => {
     }
 });
 // Rota para buscar produtos pelo ID
-app.get('/product/:id', async (req, res) => {
-    const productId = req.params.id;  // Obtém o ID do produto da URL
+app.get('/product-data', async (req, res) => {
+  const productId = req.query.id; // Obtém o ID do produto da URL
     console.log('ID recebido:', productId);
     const productsCollection = collection(db, "products");
 
