@@ -249,29 +249,32 @@ app.get('/add-product', (req, res) => {
 // Rota para editar o produto
 app.get('/add-product-data', async (req, res) => {
   const productId = req.query.id;
-    console.log("Product ID recebido:", productId);
-    const products = collection(db, "products");
+  console.log("Product ID recebido:", productId);
+  const products = collection(db, "products");
 
-    try {
-        const productDoc = await getDoc(doc(products, productId));
+  try {
+    const productDoc = await getDoc(doc(products, productId));
 
-        if (productDoc.exists()) {
-            const productData = productDoc.data();
+    if (productDoc.exists()) {
+      const productData = productDoc.data();
 
-            // Adiciona valores padrão para campos inexistentes
-            productData.oldPrice = productData.oldPrice || 'Valor Antigo';  // Coloque um placeholder de preço ou outro valor padrão
-            productData.savePrice = productData.savePrice || 'Desconto';  // Placeholder para o desconto
-            productData.tags = productData.tags || [];  // Array vazio para tags
+      // Garante que todos os campos esperados existam, com fallback
+      productData.oldPrice = productData.oldPrice || 'Valor Antigo';
+      productData.savePrice = productData.savePrice || 'Desconto';
+      productData.tags = productData.tags || [];
 
-            // Retorna o produto com os campos padronizados
-            res.json(productData);
-        } else {
-            res.status(404).json({ error: "Produto não encontrado" });
-        }
-    } catch (error) {
-        console.error('Erro ao buscar produto:', error);
-        res.status(500).json({ error: "Erro ao buscar produto" });
-    }
+      // Garante que os campos de imagem estejam definidos corretamente
+      productData.images = Array.isArray(productData.images) ? productData.images : [];
+      productData.image = productData.image || (productData.images.length ? productData.images[0] : '');
+
+      res.json(productData);
+    } else {
+      res.status(404).json({ error: "Produto não encontrado" });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar produto:', error);
+    res.status(500).json({ error: "Erro ao buscar produto" });
+  }
 });
 // Funções para calcular badges
 const isNewProduct = (createdDate) => {
