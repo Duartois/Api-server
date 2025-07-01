@@ -314,6 +314,9 @@ app.post('/add-product', (req, res) => {
     }
 
     let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
+if (!createdAt) {
+  createdAt = new Date().toISOString();
+}
 
     let productWithBadges = {
         ...req.body,
