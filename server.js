@@ -302,7 +302,6 @@ app.post('/add-product', (req, res) => {
     if (!draft) {
         if (!name || !name.length) return res.json({ alert: 'Precisa adicionar um nome ao produto' });
         if (!category || !category.length) return res.json({ alert: 'Precisa adicionar uma categoria' });
-        if (!draft && (!req.body.brand || !req.body.brand.trim().length)) {return res.json({ alert: 'Marca é obrigatória' });
         if (!price || !price.length || isNaN(Number(price))) return res.json({ alert: 'Adicione um preço válido' });
         if (oldPrice && (!oldPrice.length || isNaN(Number(oldPrice)))) return res.json({ alert: 'Adicione um valor antigo válido se aplicável' });
         if (savePrice && (!savePrice.length || isNaN(Number(savePrice)))) return res.json({ alert: 'Adicione um desconto válido se aplicável' });
