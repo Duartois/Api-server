@@ -45,11 +45,6 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
-
-app.use((req, res, next) => {
-  console.log('[ORIGIN]', req.headers.origin);
-  next();
-});
 app.use(cors(corsOptions));
 
 
@@ -628,23 +623,6 @@ app.post('/stripe-checkout', async (req, res) => {
 });
 
       console.log('Line items preparados:', lineItems); // Log dos line items
-
-      // Criação da sessão de checkout no Stripe
-      const session = await stripe.checkout.sessions.create({
-          payment_method_types: ["card"],
-          mode: "payment",
-          line_items: lineItems,
-          customer_email: email,
-          success_url: `${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${DOMAIN}/checkout`
-      });
-
-      res.json({ url: session.url });
-  } catch (error) {
-      console.error("Erro ao criar sessão de checkout:", error.message);
-      res.status(500).json({ error: "Falha ao criar sessão de checkout", message: error.message });
-  }
-});
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // O segredo do webhook configurado no painel da Stripe
 
