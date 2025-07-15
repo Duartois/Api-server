@@ -35,7 +35,8 @@ const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
   'https://www.bichinhosousados.com',
-  'https://bichinhosousados.com'
+  'https://bichinhosousados.com',
+  'https://api-server-orcin.vercel.app'
 ];
 
 const corsOptions = {
@@ -45,8 +46,8 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
-app.use(cors(corsOptions));
 
+app.use(cors(corsOptions));
 
 // Rota global para lidar com requisições de pré-voo OPTIONS
 app.options('*', cors(corsOptions), (req, res) => {
@@ -589,8 +590,8 @@ app.post('/calculate-shipping', async (req, res) => {
         }
     } catch (error) {
         console.error('Erro ao calcular o frete:', error.message);
-        res.status(500).json({ error: "Erro ao calcular o frete." });
-    }
+        res.status(500).json({ error: "Erro ao calcular o frete." });
+    }
 });
 
 //stripe payment
@@ -600,29 +601,48 @@ let DOMAIN = process.env.DOMAIN;
 
 app.post('/stripe-checkout', async (req, res) => {
   try {
-    const { items, address, email } = req.body;
+      const { items, address, email } = req.body;
 
-    if (!items || !Array.isArray(items)) {
-      throw new Error('Itens inválidos recebidos.');
-    }
+      console.log('Dados recebidos:', { items, address, email });
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: items, // <- usa direto
-      customer_email: email,
-      success_url: `${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${DOMAIN}/checkout`
-    });
+      // Verifique se 'items' está definido e é um array
+      if (!items || !Array.isArray(items)) {
+          throw new Error('Itens inválidos recebidos.');
+      }
 
-    res.json({ url: session.url });
-  } catch (error) {
-    console.error("Erro ao criar sessão de checkout:", error.message);
-    res.status(500).json({ error: "Falha ao criar sessão de checkout", message: error.message });
-  }
-});
+      // Preparando os itens para a sessão de checkout do Stripe
+      const lineItems = items.map(item => {
+      return {
+          price_data: {
+            currency: 'brl',
+            product_data: {
+                name: item.price_data.product_data.name,
+                images: item.price_data.product_data.images || [],  // Certifique-se de que tenha imagens
+              },
+              unit_amount: item.price_data.unit_amount, // Preço em centavos
+          },
+          quantity: item.quantity,
+      };
+  });
 
       console.log('Line items preparados:', lineItems); // Log dos line items
+
+      // Criação da sessão de checkout no Stripe
+      const session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          mode: "payment",
+          line_items: lineItems,
+          customer_email: email,
+          success_url: `${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${DOMAIN}/checkout`
+      });
+
+      res.json({ url: session.url });
+  } catch (error) {
+      console.error("Erro ao criar sessão de checkout:", error.message);
+      res.status(500).json({ error: "Falha ao criar sessão de checkout", message: error.message });
+  }
+});
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // O segredo do webhook configurado no painel da Stripe
 
