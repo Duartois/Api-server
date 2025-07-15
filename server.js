@@ -601,29 +601,27 @@ let DOMAIN = process.env.DOMAIN;
 
 app.post('/stripe-checkout', async (req, res) => {
   try {
-      const { items, address, email } = req.body;
+    const { items, address, email } = req.body;
 
-      console.log('Dados recebidos:', { items, address, email });
+    if (!items || !Array.isArray(items)) {
+      throw new Error('Itens inválidos recebidos.');
+    }
 
-      // Verifique se 'items' está definido e é um array
-      if (!items || !Array.isArray(items)) {
-          throw new Error('Itens inválidos recebidos.');
-      }
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: items, // <- usa direto
+      customer_email: email,
+      success_url: `${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${DOMAIN}/checkout`
+    });
 
-      // Preparando os itens para a sessão de checkout do Stripe
-      const lineItems = items.map(item => {
-      return {
-          price_data: {
-            currency: 'brl',
-            product_data: {
-                name: item.price_data.product_data.name,
-                images: item.price_data.product_data.images || [],  // Certifique-se de que tenha imagens
-              },
-              unit_amount: item.price_data.unit_amount, // Preço em centavos
-          },
-          quantity: item.quantity,
-      };
-  });
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error("Erro ao criar sessão de checkout:", error.message);
+    res.status(500).json({ error: "Falha ao criar sessão de checkout", message: error.message });
+  }
+});
 
       console.log('Line items preparados:', lineItems); // Log dos line items
 
