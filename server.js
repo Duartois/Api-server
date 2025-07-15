@@ -35,8 +35,7 @@ const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
   'https://www.bichinhosousados.com',
-  'https://bichinhosousados.com',
-  'https://api-server-orcin.vercel.app'
+  'https://bichinhosousados.com'
 ];
 
 const corsOptions = {
@@ -47,7 +46,12 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+app.use((req, res, next) => {
+  console.log('[ORIGIN]', req.headers.origin);
+  next();
+});
 app.use(cors(corsOptions));
+
 
 // Rota global para lidar com requisições de pré-voo OPTIONS
 app.options('*', cors(corsOptions), (req, res) => {
