@@ -626,7 +626,8 @@ app.post('/stripe-checkout', async (req, res) => {
   });
 
       console.log('Line items preparados:', lineItems); // Log dos line items
-
+      console.log('Line items preparados:', JSON.stringify(lineItems, null, 2));
+    
       // Criação da sessão de checkout no Stripe
       const session = await stripe.checkout.sessions.create({
           payment_method_types: ["card"],
