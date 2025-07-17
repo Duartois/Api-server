@@ -27,42 +27,6 @@ const firebaseConfig = {
 const firebase = initializeApp(firebaseConfig);
 const db = getFirestore();
 
-
-// Stripe Webhook
-app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (request, response) => {
-    const sig = request.headers['stripe-signature'];
-    let event;
-
-    try {
-        event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-        console.log('[WEBHOOK] Evento recebido:', event.type);
-    } catch (err) {
-        console.error('[WEBHOOK] Erro ao validar evento:', err.message);
-        return response.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-
-        const orderDetails = {
-  id: session.id,
-  items: await fetchLineItems(session.id),
-  total: (session.amount_total / 100).toFixed(2),
-  address: session.shipping?.address?.line1 || 'Endereço não informado',
-  customerName: session.customer_details?.name || session.customer_email || 'Cliente não identificado',
-  email: session.customer_email || 'sem-email@dominio.com'
-};
-
-
-        console.log('[WEBHOOK] Pedido recebido:', orderDetails);
-
-        // Enviar e-mail para o dono do site
-        await sendOrderDetailsViaEmail(orderDetails);
-    }
-
-    response.status(200).send('[WEBHOOK] Evento processado com sucesso.');
-});
-
 // Iniciar o servidor
 const app = express();
 const port = process.env.PORT || 3000;
@@ -666,18 +630,13 @@ app.post('/stripe-checkout', async (req, res) => {
     
       // Criação da sessão de checkout no Stripe
       const session = await stripe.checkout.sessions.create({
-  payment_method_types: ["card"],
-  mode: "payment",
-  line_items: lineItems,
-  customer_email: email,
-  shipping_address_collection: {
-    allowed_countries: ['BR']
-  },
-  billing_address_collection: 'auto',
-  success_url: `${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
-  cancel_url: `${DOMAIN}/checkout`
-});
-
+          payment_method_types: ["card"],
+          mode: "payment",
+          line_items: lineItems,
+          customer_email: email,
+          success_url: `${DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${DOMAIN}/checkout`
+      });
 
       res.json({ url: session.url });
   } catch (error) {
@@ -693,7 +652,37 @@ async function fetchLineItems(sessionId) {
     return lineItems.data; // Retorna os itens do pedido
 }
 
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (request, response) => {
+    const sig = request.headers['stripe-signature'];
+    let event;
 
+    try {
+        event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
+        console.log('[WEBHOOK] Evento recebido:', event.type);
+    } catch (err) {
+        console.error('[WEBHOOK] Erro ao validar evento:', err.message);
+        return response.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+
+        const orderDetails = {
+            id: session.id,
+            items: await fetchLineItems(session.id),
+            total: (session.amount_total / 100).toFixed(2),
+            address: session.shipping?.address?.line1 || 'Endereço não informado',
+            customerName: session.customer_details.name || 'Nome não informado',
+        };
+
+        console.log('[WEBHOOK] Pedido recebido:', orderDetails);
+
+        // Enviar e-mail para o dono do site
+        await sendOrderDetailsViaEmail(orderDetails);
+    }
+
+    response.status(200).send('[WEBHOOK] Evento processado com sucesso.');
+});
 // Função para enviar detalhes do pedido por e-mail
 
 async function sendOrderDetailsViaEmail(orderDetails) {
@@ -709,19 +698,14 @@ async function sendOrderDetailsViaEmail(orderDetails) {
         from: process.env.EMAIL_USER,
         to: 'bichinhos.ousados@gmail.com', // E-mail do dono do site
         subject: `Novo Pedido Recebido - Pedido Nº ${orderDetails.id}`,
-       text: `
-Novo Pedido Confirmado!
-
-🆔 Pedido Nº: ${orderDetails.id}
-📦 Produtos:
-${orderDetails.items.map(item => `- ${item.description || item.name}: ${item.quantity}`).join('\n')}
-
-💰 Total: R$ ${orderDetails.total}
-📍 Endereço: ${orderDetails.address}
-🧍 Cliente: ${orderDetails.customerName}
-📧 Email: ${orderDetails.email}
-`
-,
+        text: `
+            Novo Pedido Confirmado!\n
+            🆔 Pedido Nº: ${orderDetails.id}\n
+            📦 Produtos:\n${orderDetails.items.map(item => `- ${item.name}: ${item.quantity}`).join('\n')}
+            💰 Total: R$ ${orderDetails.total}\n
+            📍 Endereço: ${orderDetails.address}\n
+            🧍 Cliente: ${orderDetails.customerName}
+        `,
     };
 
     try {
