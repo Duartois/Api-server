@@ -706,13 +706,13 @@ async function sendOrderDetailsViaEmail(orderDetails) {
         to: 'bichinhos.ousados@gmail.com', // E-mail do dono do site
         subject: `Novo Pedido Recebido - Pedido Nº ${orderDetails.id}`,
         text: `
-            Novo Pedido Confirmado!\n
-            🆔 Pedido Nº: ${orderDetails.id}\n
-            📦 Produtos:\n${orderDetails.items.map(item => `- ${item.name}: ${item.quantity}`).join('\n')}
-            💰 Total: R$ ${orderDetails.total}\n
-            📍 Endereço: ${orderDetails.address}\n
-            🧍 Cliente: ${orderDetails.customerName}
-        `,
+  Novo Pedido Confirmado!\n
+  🆔 Pedido Nº: ${orderDetails.id}\n
+  📦 Produtos:\n${orderDetails.items.map(item => `- ${item.description}: ${item.quantity}`).join('\n')}
+  💰 Total: R$ ${orderDetails.total}\n
+  📍 Endereço: ${orderDetails.address}\n
+  🧍 Cliente: ${orderDetails.customerName}
+`,
     };
 
     try {
