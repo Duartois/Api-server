@@ -50,7 +50,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ alert: 'Preencha todos os campos' });
+      return res.status(400).json({ alert: "Preencha todos os campos" });
     }
 
     const users = collection(db, "users");
@@ -58,42 +58,36 @@ router.post('/login', async (req, res) => {
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
-      return res.status(400).json({ alert: 'Esse email não existe' });
+      return res.status(400).json({ alert: "Esse email não existe" });
     }
 
     const data = userSnap.data();
     const stored = data.password;
 
-    // 1) Sem senha salva -> não tente bcrypt (evita 500)
-    if (!stored || typeof stored !== 'string') {
-      return res.status(400).json({ alert: 'Conta inválida ou sem senha cadastrada' });
+    if (!stored || typeof stored !== "string") {
+      return res.status(400).json({ alert: "Conta inválida ou sem senha cadastrada" });
     }
 
-    // 2) Se não parece hash bcrypt (legado em texto plano)
-    if (!stored.startsWith('$2a$') && !stored.startsWith('$2b$') && !stored.startsWith('$2y$')) {
+    // Aceita tanto legado (texto plano) quanto hash bcrypt
+    if (!stored.startsWith("$2a$") && !stored.startsWith("$2b$") && !stored.startsWith("$2y$")) {
       if (password !== stored) {
-        return res.status(400).json({ alert: 'Senha incorreta' });
+        return res.status(400).json({ alert: "Senha incorreta" });
       }
-      // (Opcional) migrar para bcrypt aqui:
-      // const newHash = await bcrypt.hash(password, 10);
-      // await updateDoc(userRef, { password: newHash });
     } else {
-      // 3) Hash bcrypt normal
       const ok = await bcrypt.compare(password, stored);
       if (!ok) {
-        return res.status(400).json({ alert: 'Senha incorreta' });
+        return res.status(400).json({ alert: "Senha incorreta" });
       }
     }
 
-    // Sucesso
     return res.status(200).json({
-      name: data.name || '',
+      name: data.name || "",
       email,
       seller: !!data.seller,
     });
   } catch (error) {
-    console.error('[LOGIN] ERROR:', error?.message, error);
-    return res.status(500).json({ alert: 'Erro ao realizar login' });
+    console.error("[LOGIN] ERROR:", error?.message, error);
+    return res.status(500).json({ alert: "Erro ao realizar login" });
   }
 });
 
