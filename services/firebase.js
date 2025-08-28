@@ -10,11 +10,8 @@ const firebaseConfig = {
   appId: process.env.FIREBASE_APP_ID
 };
 
-// LOG de diagnóstico (não expõe segredo sensível)
-const missing = Object.entries(firebaseConfig)
-  .filter(([_, v]) => !v)
-  .map(([k]) => k);
-
+// Log de diagnóstico (não expõe segredo)
+const missing = Object.entries(firebaseConfig).filter(([k, v]) => !v).map(([k]) => k);
 if (missing.length) {
   console.error('[FIREBASE] Variáveis ausentes:', missing.join(', '));
 }
