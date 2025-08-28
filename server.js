@@ -205,12 +205,7 @@ const pluralize = (word) => {
 };
 app.post('/get-products', async (req, res) => {
   try {
-    console.log('[GET-PRODUCTS] body:', req.body);
-
     const { tag, badge, email, searchParam } = req.body;
-    if (!tag && !badge && !email && !searchParam) {
-      return res.status(400).json({ error: 'É necessário fornecer pelo menos um parâmetro de busca.' });
-    }
 
     const productsCollection = collection(db, "products");
     let q;
@@ -218,26 +213,27 @@ app.post('/get-products', async (req, res) => {
     if (email) {
       q = query(productsCollection, where("email", "==", email));
     } else if (badge) {
-      q = query(productsCollection, where(`badges.${badge}`, '==', true));
+      q = query(productsCollection, where(`badges.${badge}`, "==", true));
     } else {
-      // tag:'all' ou busca -> busca tudo
+      // se for "all" ou não tiver filtro, pega tudo
       q = productsCollection;
     }
 
     const snap = await getDocs(q);
     const out = [];
 
-    snap.forEach(docSnap => {
+    snap.forEach((docSnap) => {
       const data = docSnap.data();
-      // NORMALIZAR para o front:
+
+      // Normalizar pro front (garante sempre id + image)
       const normalized = {
         id: docSnap.id,
-        name: data.name || '',
-        image: data.image || (Array.isArray(data.images) ? data.images[0] : ''),
-        price: data.price || '',
-        oldPrice: data.oldPrice || '',
-        savePrice: data.savePrice || '',
-        category: data.category || '',
+        name: data.name || "",
+        image: data.image || (Array.isArray(data.images) ? data.images[0] : ""),
+        price: data.price || "",
+        oldPrice: data.oldPrice || "",
+        savePrice: data.savePrice || "",
+        category: data.category || "",
         badges: data.badges || {},
         createdAt: data.createdAt || data.created_at || null,
         ...data,
@@ -246,27 +242,23 @@ app.post('/get-products', async (req, res) => {
       if (searchParam) {
         const s = String(searchParam).toLowerCase().trim();
         const ok =
-          (normalized.name || '').toLowerCase().includes(s) ||
-          (normalized.id || '').toLowerCase().includes(s) ||
-          (normalized.category || '').toLowerCase().includes(s);
+          (normalized.name || "").toLowerCase().includes(s) ||
+          (normalized.id || "").toLowerCase().includes(s) ||
+          (normalized.category || "").toLowerCase().includes(s);
         if (ok) out.push(normalized);
-      } else if (tag && tag !== 'all') {
-        if ((normalized.category || '').toLowerCase() === String(tag).toLowerCase()) {
+      } else if (tag && tag !== "all") {
+        if ((normalized.category || "").toLowerCase() === String(tag).toLowerCase()) {
           out.push(normalized);
         }
       } else {
         out.push(normalized);
       }
     });
-console.log('[GET-PRODUCTS] docs encontrados:', snap.size);
-snap.forEach((doc) => {
-  console.log('[GET-PRODUCTS] exemplo:', doc.id, doc.data());
-});
-    console.log('[GET-PRODUCTS] count:', out.length);
+
     return res.json(out);
   } catch (error) {
-    console.error('[GET-PRODUCTS] ERROR:', error?.message, error);
-    return res.status(500).json({ error: 'DB_ERROR', detail: String(error?.message || error) });
+    console.error("[GET-PRODUCTS] ERROR:", error?.message, error);
+    return res.status(500).json({ error: "DB_ERROR", detail: String(error?.message || error) });
   }
 });
 
@@ -414,6 +406,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
