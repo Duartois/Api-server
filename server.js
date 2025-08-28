@@ -215,28 +215,24 @@ app.post('/get-products', async (req, res) => {
     const productsCollection = collection(db, "products");
     let queryRef;
 
-    // Filtro por email
     if (email) {
       queryRef = query(productsCollection, where("email", "==", email));
-    }
-    // Filtro por badge (badges.new/featured/popular = true)
-    else if (badge) {
+    } else if (badge) {
       queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
-    }
-    // Tag 'all' (ou busca) -> busca tudo para filtrar em memória
-    else {
+    } else {
+      // tag:'all' ou busca — busca tudo e filtra em memória
       queryRef = productsCollection;
     }
 
-    const productsSnapshot = await getDocs(queryRef);
-    const productArr = [];
+    const snap = await getDocs(queryRef);
+    const out = [];
 
-    productsSnapshot.forEach((item) => {
-      const data = item.data();
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
 
-      // NORMALIZAÇÃO para o front (garante id e image)
+      // NORMALIZAÇÃO: o front precisa de id e image
       const normalized = {
-        id: item.id,
+        id: docSnap.id,
         name: data.name || '',
         image: data.image || (Array.isArray(data.images) ? data.images[0] : ''),
         price: data.price || '',
@@ -254,23 +250,24 @@ app.post('/get-products', async (req, res) => {
           (normalized.name || '').toLowerCase().includes(s) ||
           (normalized.id || '').toLowerCase().includes(s) ||
           (normalized.category || '').toLowerCase().includes(s);
-        if (ok) productArr.push(normalized);
+        if (ok) out.push(normalized);
       } else if (tag && tag !== 'all') {
         if ((normalized.category || '').toLowerCase() === String(tag).toLowerCase()) {
-          productArr.push(normalized);
+          out.push(normalized);
         }
       } else {
-        productArr.push(normalized);
+        out.push(normalized);
       }
     });
 
-    console.log('[GET-PRODUCTS] count:', productArr.length);
-    return res.json(productArr.length > 0 ? productArr : []);
+    console.log('[GET-PRODUCTS] count:', out.length);
+    return res.json(out);
   } catch (error) {
     console.error('[GET-PRODUCTS] ERROR:', error?.message, error);
     return res.status(500).json({ error: 'DB_ERROR', detail: String(error?.message || error) });
   }
 });
+
 
 // Rota para buscar produtos pelo ID
 app.get('/product-data', async (req, res) => {
@@ -415,4 +412,5 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
