@@ -48,26 +48,55 @@ router.get('/login', (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
       return res.status(400).json({ alert: 'Preencha todos os campos' });
     }
+
     const users = collection(db, "users");
-    const userSnap = await getDoc(doc(users, email));
+    const userRef = doc(users, email);
+    const userSnap = await getDoc(userRef);
+
     if (!userSnap.exists()) {
       return res.status(400).json({ alert: 'Esse email não existe' });
     }
-    const valid = await bcrypt.compare(password, userSnap.data().password);
-    if (!valid) {
-      return res.status(400).json({ alert: 'Senha incorreta' });
-    }
+
     const data = userSnap.data();
-    const afterPage = req.query.after_page ? decodeURIComponent(req.query.after_page) : '/';
-    return res.json({ name: data.name, email: data.email, seller: data.seller, redirect: afterPage });
+    const hash = data.password;
+
+    // Trate casos comuns que causam 500:
+    if (!hash || typeof hash !== 'string') {
+      // Conta sem senha ou dado incorreto no Firestore
+      return res.status(400).json({ alert: 'Conta inválida ou sem senha cadastrada' });
+    }
+
+    // Se por acaso a senha foi salva em texto plano (legado), trate também:
+    if (!hash.startsWith('$2a$') && !hash.startsWith('$2b$') && !hash.startsWith('$2y$')) {
+      // hash não parece ser bcrypt — compare direto (para contas antigas)
+      if (password !== hash) {
+        return res.status(400).json({ alert: 'Senha incorreta' });
+      }
+    } else {
+      // hash bcrypt normal
+      const valid = await bcrypt.compare(password, hash);
+      if (!valid) {
+        return res.status(400).json({ alert: 'Senha incorreta' });
+      }
+    }
+
+    // login OK — devolva os campos que o front precisa
+    return res.status(200).json({
+      name: data.name || '',
+      email,
+      seller: !!data.seller,
+    });
   } catch (error) {
-    console.error('Erro ao realizar login:', error);
+    console.error('[LOGIN] ERROR:', error?.message, error);
+    // manter a mesma mensagem que você já usa para não quebrar o front
     return res.status(500).json({ alert: 'Erro ao realizar login' });
   }
 });
+
 
 router.get('/seller', (req, res) => {
   res.sendFile('seller.html', { root: 'public_html' });
