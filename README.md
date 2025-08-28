@@ -7,10 +7,9 @@ Este repositório contém um servidor API completo desenvolvido com Node.js e Ex
 - **Node.js**: Ambiente de execução JavaScript.
 - **Express.js**: Framework para Node.js.
 - **Bcrypt**: Hashing de senhas para maior segurança.
-- **Axios**: Comunicação HTTP com outras APIs.
 - **Stripe**: Processamento de pagamentos online.
 - **Amazon S3**: Armazenamento de arquivos.
-- **Firebase**: Serviços de autenticação e notificações push.
+- **Firebase**: Serviços de autenticação e banco de dados.
 
 ## Instalação
 
@@ -38,10 +37,20 @@ Crie um arquivo `.env` na raiz do projeto e configure as seguintes variáveis:
 
 ```env
 PORT=3000
-STRIPE_SECRET_KEY=sua_chave_secreta_stripe
+STRIPE_KEY=sua_chave_stripe
+STRIPE_WEBHOOK_SECRET=seu_webhook_secret
+DOMAIN=https://seu_dominio
 AWS_ACCESS_KEY_ID=sua_chave_aws
 AWS_SECRET_ACCESS_KEY=sua_chave_secreta_aws
 FIREBASE_API_KEY=sua_chave_firebase
+FIREBASE_AUTH_DOMAIN=seu_dominio_firebase
+FIREBASE_PROJECT_ID=seu_id_projeto
+FIREBASE_STORAGE_BUCKET=seu_bucket
+FIREBASE_MESSAGING_SENDER_ID=seu_sender_id
+FIREBASE_APP_ID=seu_app_id
+GOOGLE_MAPS_API_KEY=sua_chave_google
+EMAIL_USER=seu_email
+EMAIL_PASS=sua_senha_email
 ```
 
 ## Executando o Projeto
