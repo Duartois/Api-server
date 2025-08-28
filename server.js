@@ -258,7 +258,10 @@ app.post('/get-products', async (req, res) => {
         out.push(normalized);
       }
     });
-
+console.log('[GET-PRODUCTS] docs encontrados:', snap.size);
+snap.forEach((doc) => {
+  console.log('[GET-PRODUCTS] exemplo:', doc.id, doc.data());
+});
     console.log('[GET-PRODUCTS] count:', out.length);
     return res.json(out);
   } catch (error) {
@@ -411,6 +414,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
