@@ -10,5 +10,14 @@ const firebaseConfig = {
   appId: process.env.FIREBASE_APP_ID
 };
 
+// LOG de diagnóstico (não expõe segredo sensível)
+const missing = Object.entries(firebaseConfig)
+  .filter(([_, v]) => !v)
+  .map(([k]) => k);
+
+if (missing.length) {
+  console.error('[FIREBASE] Variáveis ausentes:', missing.join(', '));
+}
+
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
