@@ -213,24 +213,23 @@ app.post('/get-products', async (req, res) => {
     }
 
     const productsCollection = collection(db, "products");
-    let queryRef;
+    let q;
 
     if (email) {
-      queryRef = query(productsCollection, where("email", "==", email));
+      q = query(productsCollection, where("email", "==", email));
     } else if (badge) {
-      queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
+      q = query(productsCollection, where(`badges.${badge}`, '==', true));
     } else {
-      // tag:'all' ou busca — busca tudo e filtra em memória
-      queryRef = productsCollection;
+      // tag:'all' ou busca -> busca tudo
+      q = productsCollection;
     }
 
-    const snap = await getDocs(queryRef);
+    const snap = await getDocs(q);
     const out = [];
 
-    snap.forEach((docSnap) => {
+    snap.forEach(docSnap => {
       const data = docSnap.data();
-
-      // NORMALIZAÇÃO: o front precisa de id e image
+      // NORMALIZAR para o front:
       const normalized = {
         id: docSnap.id,
         name: data.name || '',
@@ -412,5 +411,6 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
