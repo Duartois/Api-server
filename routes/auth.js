@@ -62,29 +62,30 @@ router.post('/login', async (req, res) => {
     }
 
     const data = userSnap.data();
-    const hash = data.password;
+    const stored = data.password;
 
-    // Trate casos comuns que causam 500:
-    if (!hash || typeof hash !== 'string') {
-      // Conta sem senha ou dado incorreto no Firestore
+    // 1) Sem senha salva -> não tente bcrypt (evita 500)
+    if (!stored || typeof stored !== 'string') {
       return res.status(400).json({ alert: 'Conta inválida ou sem senha cadastrada' });
     }
 
-    // Se por acaso a senha foi salva em texto plano (legado), trate também:
-    if (!hash.startsWith('$2a$') && !hash.startsWith('$2b$') && !hash.startsWith('$2y$')) {
-      // hash não parece ser bcrypt — compare direto (para contas antigas)
-      if (password !== hash) {
+    // 2) Se não parece hash bcrypt (legado em texto plano)
+    if (!stored.startsWith('$2a$') && !stored.startsWith('$2b$') && !stored.startsWith('$2y$')) {
+      if (password !== stored) {
         return res.status(400).json({ alert: 'Senha incorreta' });
       }
+      // (Opcional) migrar para bcrypt aqui:
+      // const newHash = await bcrypt.hash(password, 10);
+      // await updateDoc(userRef, { password: newHash });
     } else {
-      // hash bcrypt normal
-      const valid = await bcrypt.compare(password, hash);
-      if (!valid) {
+      // 3) Hash bcrypt normal
+      const ok = await bcrypt.compare(password, stored);
+      if (!ok) {
         return res.status(400).json({ alert: 'Senha incorreta' });
       }
     }
 
-    // login OK — devolva os campos que o front precisa
+    // Sucesso
     return res.status(200).json({
       name: data.name || '',
       email,
@@ -92,7 +93,6 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('[LOGIN] ERROR:', error?.message, error);
-    // manter a mesma mensagem que você já usa para não quebrar o front
     return res.status(500).json({ alert: 'Erro ao realizar login' });
   }
 });
