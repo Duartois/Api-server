@@ -204,62 +204,74 @@ const pluralize = (word) => {
     }
 };
 app.post('/get-products', async (req, res) => {
-    const { tag, badge, email, searchParam } = req.body;
+  try {
+    console.log('[GET-PRODUCTS] body:', req.body);
 
-    // Caso nenhum parâmetro seja enviado
+    const { tag, badge, email, searchParam } = req.body;
     if (!tag && !badge && !email && !searchParam) {
-        return res.status(400).json({ error: 'É necessário fornecer pelo menos um parâmetro de busca.' });
+      return res.status(400).json({ error: 'É necessário fornecer pelo menos um parâmetro de busca.' });
     }
 
     const productsCollection = collection(db, "products");
+    let queryRef;
 
-    try {
-        let queryRef;
-
-        // Filtro por email
-        if (email) {
-            queryRef = query(productsCollection, where("email", "==", email));
-        }
-        // Filtro por badge
-        else if (badge) {
-            queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
-        }
-        // Filtro por tag
-        else if (tag) {
-            queryRef = productsCollection; // Busca todos os produtos para filtrar localmente
-        } else if (searchParam) {
-            queryRef = productsCollection; // Busca todos os produtos para filtrar por searchParam
-        }
-
-        const productsSnapshot = await getDocs(queryRef || productsCollection);
-        const productArr = [];
-
-        productsSnapshot.forEach((item) => {
-            const data = item.data();
-            const { name = "", id = "", category = "" } = data;
-
-            // Adiciona produtos ao array
-            if (searchParam) {
-                const searchKey = searchParam.toLowerCase().trim();
-
-                if (
-                    name.toLowerCase().includes(searchKey) ||
-                    id.toLowerCase().includes(searchKey) ||
-                    category.toLowerCase().includes(searchKey)
-                ) {
-                    productArr.push({ ...data, id: item.id });
-                }
-            } else {
-                productArr.push({ ...data, id: item.id });
-            }
-        });
-
-        res.json(productArr.length > 0 ? productArr : []);
-    } catch (error) {
-        console.error('Erro ao buscar produtos:', error.message);
-        res.status(500).json({ error: 'Erro interno ao buscar produtos.' });
+    // Filtro por email
+    if (email) {
+      queryRef = query(productsCollection, where("email", "==", email));
     }
+    // Filtro por badge (badges.new/featured/popular = true)
+    else if (badge) {
+      queryRef = query(productsCollection, where(`badges.${badge}`, '==', true));
+    }
+    // Tag 'all' (ou busca) -> busca tudo para filtrar em memória
+    else {
+      queryRef = productsCollection;
+    }
+
+    const productsSnapshot = await getDocs(queryRef);
+    const productArr = [];
+
+    productsSnapshot.forEach((item) => {
+      const data = item.data();
+
+      // NORMALIZAÇÃO para o front (garante id e image)
+      const normalized = {
+        id: item.id,
+        name: data.name || '',
+        image: data.image || (Array.isArray(data.images) ? data.images[0] : ''),
+        price: data.price || '',
+        oldPrice: data.oldPrice || '',
+        savePrice: data.savePrice || '',
+        category: data.category || '',
+        badges: data.badges || {},
+        createdAt: data.createdAt || data.created_at || null,
+        ...data,
+      };
+
+      if (searchParam) {
+        const s = String(searchParam).toLowerCase().trim();
+        const ok =
+          (normalized.name || '').toLowerCase().includes(s) ||
+          (normalized.id || '').toLowerCase().includes(s) ||
+          (normalized.category || '').toLowerCase().includes(s);
+        if (ok) productArr.push(normalized);
+      } else if (tag && tag !== 'all') {
+        if ((normalized.category || '').toLowerCase() === String(tag).toLowerCase()) {
+          productArr.push(normalized);
+        }
+      } else {
+        productArr.push(normalized);
+      }
+    });
+
+    console.log('[GET-PRODUCTS] count:', productArr.length);
+    return res.json(productArr.length > 0 ? productArr : []);
+  } catch (error) {
+    console.error('[GET-PRODUCTS] ERROR:', error?.message, error);
+    return res.status(500).json({ error: 'DB_ERROR', detail: String(error?.message || error) });
+  }
 });
+
 // Rota para buscar produtos pelo ID
 app.get('/product-data', async (req, res) => {
   const productId = req.query.id; // Obtém o ID do produto da URL
@@ -381,6 +393,7 @@ app.get('/cart', (req, res) => {
 app.get('/checkout', (req, res) => {
   res.sendFile("checkout.html", { root : "public_html"})
 })
+
 app.get('/success', (req, res) => {
   console.log("Página de sucesso acessada com session_id:", req.query.session_id);
   res.sendFile("success.html", { root: "public_html"  });
