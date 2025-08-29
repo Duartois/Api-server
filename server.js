@@ -206,17 +206,15 @@ const pluralize = (word) => {
 app.post('/get-products', async (req, res) => {
   try {
     const { tag, badge, email, searchParam } = req.body;
-
     const productsCollection = collection(db, "products");
-    let q;
 
+    let q;
     if (email) {
       q = query(productsCollection, where("email", "==", email));
     } else if (badge) {
       q = query(productsCollection, where(`badges.${badge}`, "==", true));
     } else {
-      // tag = all ou busca = pega tudo
-      q = productsCollection;
+      q = productsCollection; // pega todos
     }
 
     const snap = await getDocs(q);
@@ -224,30 +222,27 @@ app.post('/get-products', async (req, res) => {
 
     snap.forEach((docSnap) => {
       const data = docSnap.data();
-
       const normalized = {
         id: docSnap.id,
         name: data.name || "",
-        image: data.image || (Array.isArray(data.images) ? data.images[0] : ""),
+        image: data.image || (Array.isArray(data.images) && data.images.length ? data.images[0] : "/assets/img/placeholder.png"),
         price: data.price || "",
         oldPrice: data.oldPrice || "",
         savePrice: data.savePrice || "",
         category: data.category || "",
         badges: data.badges || {},
-        createdAt: data.createdAt || data.created_at || null,
         ...data,
       };
 
-      // filtros (se vier search/tag)
       if (searchParam) {
-        const s = String(searchParam).toLowerCase().trim();
+        const s = String(searchParam).toLowerCase();
         const ok =
           (normalized.name || "").toLowerCase().includes(s) ||
           (normalized.id || "").toLowerCase().includes(s) ||
           (normalized.category || "").toLowerCase().includes(s);
         if (ok) out.push(normalized);
       } else if (tag && tag !== "all") {
-        if ((normalized.category || "").toLowerCase() === String(tag).toLowerCase()) {
+        if ((normalized.category || "").toLowerCase() === tag.toLowerCase()) {
           out.push(normalized);
         }
       } else {
@@ -257,12 +252,11 @@ app.post('/get-products', async (req, res) => {
 
     console.log("[GET-PRODUCTS] retornando", out.length, "produtos");
     return res.json(out);
-  } catch (error) {
-    console.error("[GET-PRODUCTS] ERROR:", error?.message, error);
-    return res.status(500).json({ error: "DB_ERROR", detail: String(error?.message || error) });
+  } catch (err) {
+    console.error("[GET-PRODUCTS] ERROR:", err);
+    return res.status(500).json({ error: "DB_ERROR", detail: String(err.message) });
   }
 });
-
 
 
 // Rota para buscar produtos pelo ID
@@ -408,6 +402,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
