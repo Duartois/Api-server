@@ -215,7 +215,7 @@ app.post('/get-products', async (req, res) => {
     } else if (badge) {
       q = query(productsCollection, where(`badges.${badge}`, "==", true));
     } else {
-      // se for "all" ou não tiver filtro, pega tudo
+      // tag = all ou busca = pega tudo
       q = productsCollection;
     }
 
@@ -225,7 +225,6 @@ app.post('/get-products', async (req, res) => {
     snap.forEach((docSnap) => {
       const data = docSnap.data();
 
-      // Normalizar pro front (garante sempre id + image)
       const normalized = {
         id: docSnap.id,
         name: data.name || "",
@@ -239,6 +238,7 @@ app.post('/get-products', async (req, res) => {
         ...data,
       };
 
+      // filtros (se vier search/tag)
       if (searchParam) {
         const s = String(searchParam).toLowerCase().trim();
         const ok =
@@ -255,12 +255,14 @@ app.post('/get-products', async (req, res) => {
       }
     });
 
+    console.log("[GET-PRODUCTS] retornando", out.length, "produtos");
     return res.json(out);
   } catch (error) {
     console.error("[GET-PRODUCTS] ERROR:", error?.message, error);
     return res.status(500).json({ error: "DB_ERROR", detail: String(error?.message || error) });
   }
 });
+
 
 
 // Rota para buscar produtos pelo ID
@@ -406,6 +408,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
