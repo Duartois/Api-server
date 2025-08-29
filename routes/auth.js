@@ -64,21 +64,21 @@ router.post('/login', async (req, res) => {
     const data = userSnap.data();
     const stored = data.password;
 
-    if (!stored || typeof stored !== "string") {
+    if (!stored) {
       return res.status(400).json({ alert: "Conta inválida ou sem senha cadastrada" });
     }
 
-    // texto plano (legado)
-    if (!stored.startsWith("$2a$") && !stored.startsWith("$2b$") && !stored.startsWith("$2y$")) {
-      if (password !== stored) {
-        return res.status(400).json({ alert: "Senha incorreta" });
-      }
+    let valid = false;
+
+    // aceita tanto texto plano (legado) quanto hash bcrypt
+    if (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")) {
+      valid = await bcrypt.compare(password, stored);
     } else {
-      // hash bcrypt
-      const ok = await bcrypt.compare(password, stored);
-      if (!ok) {
-        return res.status(400).json({ alert: "Senha incorreta" });
-      }
+      valid = password === stored;
+    }
+
+    if (!valid) {
+      return res.status(400).json({ alert: "Senha incorreta" });
     }
 
     return res.status(200).json({
@@ -87,10 +87,11 @@ router.post('/login', async (req, res) => {
       seller: !!data.seller,
     });
   } catch (error) {
-    console.error("[LOGIN] ERROR:", error?.message, error);
+    console.error("[LOGIN] ERROR:", error);
     return res.status(500).json({ alert: "Erro ao realizar login" });
   }
 });
+
 
 
 router.get('/seller', (req, res) => {
