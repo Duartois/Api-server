@@ -68,12 +68,13 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ alert: "Conta inválida ou sem senha cadastrada" });
     }
 
-    // Aceita tanto legado (texto plano) quanto hash bcrypt
+    // texto plano (legado)
     if (!stored.startsWith("$2a$") && !stored.startsWith("$2b$") && !stored.startsWith("$2y$")) {
       if (password !== stored) {
         return res.status(400).json({ alert: "Senha incorreta" });
       }
     } else {
+      // hash bcrypt
       const ok = await bcrypt.compare(password, stored);
       if (!ok) {
         return res.status(400).json({ alert: "Senha incorreta" });
