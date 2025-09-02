@@ -12,6 +12,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
+  'http://localhost:5173',
   'https://www.bichinhosousados.com',
   'https://bichinhosousados.com',
   'https://api-server-orcin.vercel.app'
@@ -402,6 +403,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
