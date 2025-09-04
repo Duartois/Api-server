@@ -19,7 +19,14 @@ const allowedOrigins = [
 ];
 
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Permite requests do server (sem origin) e de origens válidas
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
@@ -27,9 +34,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions), (req, res) => {
-  res.sendStatus(200);
-});
+app.options('*', cors(corsOptions));
+
 
 app.use((req, res, next) => {
   if (req.originalUrl === '/stripe-webhook') {
@@ -433,6 +439,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
