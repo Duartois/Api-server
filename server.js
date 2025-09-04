@@ -127,53 +127,77 @@ const isPopularProduct = (salesCount) => {
     return salesCount > popularThreshold;
 };
 
-app.post('/add-product', (req, res) => {
-    let { name, shortDes, detail, price, images = [], tags = [], email, draft, oldPrice, savePrice, id, createdAt, salesCount, category } = req.body;
+app.post('/add-product', async (req, res) => {
+  let { 
+    name, shortDes, detail, price, 
+    images = [], tags = [], email, draft, 
+    oldPrice, savePrice, id, createdAt, 
+    salesCount = 0, category, type 
+  } = req.body;
 
-    // Validação dos campos obrigatórios
-    if (!draft) {
-        if (!name || !name.length) return res.json({ alert: 'Precisa adicionar um nome ao produto' });
-        if (!category || !category.length) return res.json({ alert: 'Precisa adicionar uma categoria' });
-        if (!price || !price.length || isNaN(Number(price))) return res.json({ alert: 'Adicione um preço válido' });
-        if (oldPrice && (!oldPrice.length || isNaN(Number(oldPrice)))) return res.json({ alert: 'Adicione um valor antigo válido se aplicável' });
-        if (savePrice && (!savePrice.length || isNaN(Number(savePrice)))) return res.json({ alert: 'Adicione um desconto válido se aplicável' });
-        if (!shortDes || !shortDes.length) return res.json({ alert: 'Precisa adicionar uma curta descrição' });
-        if (!detail || !detail.length) return res.json({ alert: 'Precisa adicionar uma descrição' });
+  // Validação dos campos obrigatórios
+  if (!draft) {
+    if (!name || !name.length) return res.json({ alert: 'Precisa adicionar um nome ao produto' });
+    if (!category || !category.length) return res.json({ alert: 'Precisa adicionar uma categoria' });
+    if (!price || !price.length || isNaN(Number(price))) return res.json({ alert: 'Adicione um preço válido' });
+    if (oldPrice && (!oldPrice.length || isNaN(Number(oldPrice)))) return res.json({ alert: 'Adicione um valor antigo válido se aplicável' });
+    if (savePrice && (!savePrice.length || isNaN(Number(savePrice)))) return res.json({ alert: 'Adicione um desconto válido se aplicável' });
+    if (!shortDes || !shortDes.length) return res.json({ alert: 'Precisa adicionar uma curta descrição' });
+    if (!detail || !detail.length) return res.json({ alert: 'Precisa adicionar uma descrição' });
+  }
+
+  if (savePrice && !oldPrice) {
+    return res.json({ alert: 'Adicione um valor antigo (oldPrice) se estiver adicionando um desconto (savePrice)' });
+  }
+
+  let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
+  if (!createdAt) {
+    createdAt = new Date().toISOString();
+  }
+
+  // Normaliza imagens
+  if (!Array.isArray(images)) {
+    images = [images].filter(Boolean);
+  }
+  const image = images.length > 0 ? images[0] : "";
+
+  let productWithBadges = {
+    id: docName,
+    name,
+    type: type || "",        // novo campo
+    category,
+    shortDes,
+    detail,
+    price,
+    oldPrice,
+    savePrice,
+    tags,
+    email,
+    draft,
+    createdAt,
+    salesCount,
+    images,
+    image,                   // principal
+    badges: {
+      new: isNewProduct(createdAt),
+      featured: savePrice ? isFeaturedProduct(req.body) : false,
+      popular: isPopularProduct(salesCount)
     }
+  };
 
-    if (savePrice && !oldPrice) {
-        return res.json({ alert: 'Adicione um valor antigo (oldPrice) se estiver adicionando um desconto (savePrice)' });
-    }
-
-    let docName = id ? id : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 50000)}`;
-if (!createdAt) {
-  createdAt = new Date().toISOString();
-}
-
-    let productWithBadges = {
-        ...req.body,
-        id: docName,
-        badges: {
-            new: isNewProduct(createdAt),
-            featured: savePrice ? isFeaturedProduct(req.body) : false,
-            popular: isPopularProduct(salesCount)
-        }
-    };
-
+  try {
     const products = collection(db, "products");
-
-    setDoc(doc(products, docName), productWithBadges)
-        .then(() => {
-            res.status(200).json({
-                success: true,
-                product: productWithBadges
-            });
-        })
-        .catch(err => {
-            console.error('Erro ao adicionar produto:', err);
-            res.status(500).json({ alert: 'Ocorreu algum erro no servidor' });
-        });
+    await setDoc(doc(products, docName), productWithBadges);
+    return res.status(200).json({
+      success: true,
+      product: productWithBadges
+    });
+  } catch (err) {
+    console.error('Erro ao adicionar produto:', err);
+    return res.status(500).json({ alert: 'Ocorreu algum erro no servidor' });
+  }
 });
+
 const generateTagVariants = (tag) => {
     if (!tag || !tag.trim()) {
         // Se a tag estiver vazia ou contiver apenas espaços em branco, retorna um array vazio
@@ -403,6 +427,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
