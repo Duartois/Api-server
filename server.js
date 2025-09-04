@@ -35,11 +35,7 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
-app.use("/api", webhookRoutes);
-app.use("/api", authRoutes);
-app.use("/api", paymentRoutes);
-app.use("/api", shippingRoutes);
-app.use("/api", ordersRoutes);
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
@@ -50,6 +46,12 @@ app.use((req, res, next) => {
     express.json()(req, res, next);
   }
 });
+
+app.use("/api", authRoutes);
+app.use("/api", paymentRoutes);
+app.use("/api", shippingRoutes);
+app.use("/api", ordersRoutes);
+app.use("/api", webhookRoutes);
 
 app.get('/s3url', (req, res) => {
   const fileType = req.query.fileType;
@@ -440,6 +442,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
