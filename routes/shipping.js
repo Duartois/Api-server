@@ -8,7 +8,7 @@ function calcularFretePorCep(customerZipCode) {
   // Mesmo CEP (mesma rua) → grátis
   if (customerZipCode === BASE_ZIP) {
     return {
-      valor: 0,
+      valor: "Gratis",
       servico: "Entrega Local",
       prazo: "Mesmo dia",
       message: "Frete grátis - mesma rua",
