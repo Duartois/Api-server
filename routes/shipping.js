@@ -1,4 +1,5 @@
 import express from "express";
+import fetch from "node-fetch";
 const router = express.Router();
 
 // Função para buscar dados do CEP na BrasilAPI
