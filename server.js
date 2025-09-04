@@ -7,6 +7,9 @@ import { generateURL } from "./services/s3Service.js";
 import authRoutes from "./routes/auth.js";
 import paymentRoutes from "./routes/payment.js";
 import shippingRoutes from "./routes/shipping.js";
+import bodyParser from "body-parser";
+import webhookRoutes from "./routes/webhook.js";
+import ordersRoutes from "./routes/orders.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -32,10 +35,13 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
-
+app.use("/api", webhookRoutes);
+app.use("/api", authRoutes);
+app.use("/api", paymentRoutes);
+app.use("/api", shippingRoutes);
+app.use("/api", ordersRoutes);
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-
 
 app.use((req, res, next) => {
   if (req.originalUrl === '/stripe-webhook') {
@@ -44,10 +50,6 @@ app.use((req, res, next) => {
     express.json()(req, res, next);
   }
 });
-
-app.use(authRoutes);
-app.use(paymentRoutes);
-app.use(shippingRoutes);
 
 app.get('/s3url', (req, res) => {
   const fileType = req.query.fileType;
@@ -438,6 +440,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
