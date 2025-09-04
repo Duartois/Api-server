@@ -33,8 +33,15 @@ router.post('/calculate-shipping', async (req, res) => {
       if (distanceInKm <= FREE_SHIPPING_RADIUS_KM) {
         res.json({ shippingCost: 0, distance: distanceInKm, message: 'Frete grátis!' });
       } else {
-        const shippingCost = Math.round(Math.max(1100, Math.min(5500, distanceInKm * 150)));
-        res.json({ shippingCost, distance: distanceInKm, message: 'Frete aplicado com base na distância.' });
+        const shippingCost = Math.max(11, Math.min(55, distanceInKm * 1.5)); // valores em reais
+res.json({
+  valor: shippingCost,
+  distancia: distanceInKm,
+  servico: distanceInKm <= FREE_SHIPPING_RADIUS_KM ? "Frete Local" : "Entrega Padrão",
+  prazo: distanceInKm <= FREE_SHIPPING_RADIUS_KM ? "1 dia útil" : "3-7 dias úteis",
+  message: distanceInKm <= FREE_SHIPPING_RADIUS_KM ? "Frete grátis!" : "Frete calculado pela distância."
+});
+
       }
     } else {
       throw new Error(`Google Maps API Error: ${response.data.rows[0].elements[0].status}`);
