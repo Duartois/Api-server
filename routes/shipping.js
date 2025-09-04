@@ -58,9 +58,14 @@ router.post("/calculate-shipping", async (req, res) => {
     const coords = await getCoordsByAddress(addressOptions);
 
     if (!coords) {
-      return res.status(400).json({ error: "Não foi possível localizar o endereço no mapa" });
-    }
-
+  const frete = {
+    valor: 35,
+    servico: "Entrega Nacional (fallback)",
+    prazo: "5-9 dias úteis",
+    message: "Não foi possível localizar o endereço no mapa. Aplicado frete nacional."
+  };
+  return res.json(frete);
+}
     const km = haversine(BASE_COORDS, coords);
     const frete = calcularFretePorDistancia(km);
 
