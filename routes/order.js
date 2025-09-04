@@ -1,20 +1,30 @@
-import mongoose from "mongoose";
+import express from "express";
+import { db } from "../services/firebase.js";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 
-const OrderSchema = new mongoose.Schema({
-  email: { type: String, required: true },
-  sellerId: { type: String, default: "default" },
-  address: { type: Object, default: {} },
-  products: [
-    {
-      name: String,
-      quantity: Number,
-      price: Number,
-    },
-  ],
-  total: Number,
-  status: String,
-  stripeSessionId: String,
-  createdAt: { type: Date, default: Date.now },
+const router = express.Router();
+
+router.post("/get-orders", async (req, res) => {
+  try {
+    const { email, sellerId } = req.body;
+
+    let q = collection(db, "orders");
+
+    if (email) {
+      q = query(q, where("email", "==", email), orderBy("createdAt", "desc"));
+    } else if (sellerId) {
+      q = query(q, where("sellerId", "==", sellerId), orderBy("createdAt", "desc"));
+    }
+
+    const snapshot = await getDocs(q);
+    const orders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    res.json(orders);
+  } catch (err) {
+    console.error("Erro ao buscar pedidos:", err);
+    res.status(500).json({ error: "Erro ao buscar pedidos" });
+  }
 });
 
-export default mongoose.models.Order || mongoose.model("Order", OrderSchema);
+export default router;
+
