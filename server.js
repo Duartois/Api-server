@@ -253,24 +253,33 @@ app.post('/get-products', async (req, res) => {
         savePrice: data.savePrice || "",
         category: data.category || "",
         badges: data.badges || {},
+        draft: !!data.draft,
         ...data,
       };
 
-      if (searchParam) {
-        const s = String(searchParam).toLowerCase();
-        const ok =
-          (normalized.name || "").toLowerCase().includes(s) ||
-          (normalized.id || "").toLowerCase().includes(s) ||
-          (normalized.category || "").toLowerCase().includes(s);
-        if (ok) out.push(normalized);
-      } else if (tag && tag !== "all") {
-        if ((normalized.category || "").toLowerCase() === tag.toLowerCase()) {
-          out.push(normalized);
-        }
-      } else {
-        out.push(normalized);
-      }
-    });
+      if (email) {
+  // Dashboard: retorna tudo (inclusive rascunhos)
+  out.push(normalized);
+} else {
+  // Público: só produtos publicados
+  if (normalized.draft) return; // pula se for rascunho
+
+  if (searchParam) {
+    const s = String(searchParam).toLowerCase();
+    const ok =
+      (normalized.name || "").toLowerCase().includes(s) ||
+      (normalized.id || "").toLowerCase().includes(s) ||
+      (normalized.category || "").toLowerCase().includes(s);
+    if (ok) out.push(normalized);
+  } else if (tag && tag !== "all") {
+    if ((normalized.category || "").toLowerCase() === tag.toLowerCase()) {
+      out.push(normalized);
+    }
+  } else {
+    out.push(normalized);
+  }
+}
+
 
     console.log("[GET-PRODUCTS] retornando", out.length, "produtos");
     return res.json(out);
@@ -424,6 +433,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
