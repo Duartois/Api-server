@@ -15,20 +15,18 @@ async function getAddressByCep(zip) {
   }
 }
 
-async function getCoordsByAddress(parts) {
-  for (const address of parts) {
-    try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&country=Brazil&format=json&limit=1`);
-      const data = await response.json();
-      if (data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-      }
-    } catch (err) {
-      console.error("Erro Nominatim:", err);
-    }
+async function getCoordsByCep(cep) {
+  const response = await fetch(`https://www.cepaberto.com/api/v3/cep?cep=${cep}`, {
+    headers: { Authorization: `Token token=${process.env.CEPABERTO_TOKEN}` }
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  if (data.latitude && data.longitude) {
+    return { lat: parseFloat(data.latitude), lon: parseFloat(data.longitude) };
   }
   return null;
 }
+
 
 router.post("/calculate-shipping", async (req, res) => {
   let { customerZipCode } = req.body;
