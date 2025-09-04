@@ -264,37 +264,36 @@ app.post('/get-products', async (req, res) => {
       };
 
       if (email) {
-  // Dashboard: retorna tudo (inclusive rascunhos)
-  out.push(normalized);
-} else {
-  // Público: só produtos publicados
-  if (normalized.draft) return; // pula se for rascunho
+        // Dashboard: retorna tudo
+        out.push(normalized);
+      } else {
+        // Público: só publicados
+        if (normalized.draft) return;
 
-  if (searchParam) {
-    const s = String(searchParam).toLowerCase();
-    const ok =
-      (normalized.name || "").toLowerCase().includes(s) ||
-      (normalized.id || "").toLowerCase().includes(s) ||
-      (normalized.category || "").toLowerCase().includes(s);
-    if (ok) out.push(normalized);
-  } else if (tag && tag !== "all") {
-    if ((normalized.category || "").toLowerCase() === tag.toLowerCase()) {
-      out.push(normalized);
-    }
-  } else {
-    out.push(normalized);
-  }
-}
-
+        if (searchParam) {
+          const s = String(searchParam).toLowerCase();
+          const ok =
+            (normalized.name || "").toLowerCase().includes(s) ||
+            (normalized.id || "").toLowerCase().includes(s) ||
+            (normalized.category || "").toLowerCase().includes(s);
+          if (ok) out.push(normalized);
+        } else if (tag && tag !== "all") {
+          if ((normalized.category || "").toLowerCase() === tag.toLowerCase()) {
+            out.push(normalized);
+          }
+        } else {
+          out.push(normalized);
+        }
+      }
+    });
 
     console.log("[GET-PRODUCTS] retornando", out.length, "produtos");
-    return res.json(out);
+    return res.json(out); // <-- só aqui no final
   } catch (err) {
     console.error("[GET-PRODUCTS] ERROR:", err);
     return res.status(500).json({ error: "DB_ERROR", detail: String(err.message) });
   }
 });
-
 
 // Rota para buscar produtos pelo ID
 app.get('/product-data', async (req, res) => {
@@ -439,6 +438,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
