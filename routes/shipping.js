@@ -17,7 +17,7 @@ async function getCepInfo(cep) {
 function calcularFretePorCep(cep, bairro, cidade, estado) {
   // Rua (CEP exato) → grátis
   if (cep === "03314030") {
-    return { valor: 0, servico: "Entrega Local", prazo: "1 dia útil" };
+    return { valor: "Grátis", servico: "Entrega Local", prazo: "1 dia útil" };
   }
 
   // Bairro específico
