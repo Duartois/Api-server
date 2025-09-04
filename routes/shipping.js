@@ -1,25 +1,35 @@
 import express from "express";
 const router = express.Router();
 
-const BASE_ZIP = "03346030"; // Anália Franco
-const BASE_COORDS = { lat: -23.5612, lon: -46.5604 }; // exemplo fixo do CEP base
+const BASE_COORDS = { lat: -23.5612, lon: -46.5604 }; // CEP base
 
-// Função para obter coordenadas de um CEP usando Nominatim (OpenStreetMap)
-async function getCoordsByZip(zip) {
+// Consulta ViaCEP
+async function getAddressByCep(zip) {
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${zip}&country=Brazil&format=json&limit=1`);
+    const response = await fetch(`https://viacep.com.br/ws/${zip}/json/`);
     const data = await response.json();
-    if (data.length === 0) return null;
-    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-  } catch (err) {
-    console.error("Erro ao buscar coordenadas:", err);
+    if (data.erro) return null;
+    return `${data.logradouro || ""}, ${data.bairro || ""}, ${data.localidade}, ${data.uf}`;
+  } catch {
     return null;
   }
 }
 
-// Fórmula de Haversine (distância em km)
+// Consulta Nominatim (OpenStreetMap)
+async function getCoordsByAddress(address) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&country=Brazil&format=json&limit=1`);
+    const data = await response.json();
+    if (!data.length) return null;
+    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+  } catch {
+    return null;
+  }
+}
+
+// Fórmula de Haversine (km)
 function haversine(coord1, coord2) {
-  const R = 6371; // raio da Terra em km
+  const R = 6371;
   const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
   const dLon = (coord2.lon - coord1.lon) * Math.PI / 180;
   const lat1 = coord1.lat * Math.PI / 180;
@@ -28,25 +38,22 @@ function haversine(coord1, coord2) {
   const a =
     Math.sin(dLat/2) ** 2 +
     Math.sin(dLon/2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
 // Calcula frete baseado em distância
 function calcularFretePorDistancia(km) {
-  if (km <= 0.5) return { valor: "Gratis", servico: "Entrega Local", prazo: "Mesmo dia", message: "Frete grátis - mesma rua" };
-  if (km <= 3) return { valor: 10, servico: "Entrega Bairro", prazo: "1 dia útil", message: "Entrega no mesmo bairro" };
-  if (km <= 15) return { valor: 15, servico: "Entrega Zona Leste", prazo: "1-2 dias úteis", message: "Entrega dentro da Zona Leste" };
-  if (km <= 30) return { valor: 18, servico: "Entrega São Paulo - Capital", prazo: "2-3 dias úteis", message: "Entrega em outras zonas da capital" };
-  if (km <= 60) return { valor: 25, servico: "Entrega Região Metropolitana", prazo: "3-4 dias úteis", message: "Entrega na Grande São Paulo" };
-  return { valor: 35, servico: "Entrega Nacional", prazo: "5-9 dias úteis", message: "Entrega para outras regiões do Brasil" };
+  if (km <= 0.5) return { valor: 0, servico: "Entrega Local", prazo: "Mesmo dia" };
+  if (km <= 3) return { valor: 10, servico: "Entrega Bairro", prazo: "1 dia útil" };
+  if (km <= 15) return { valor: 15, servico: "Entrega Zona Leste", prazo: "1-2 dias úteis" };
+  if (km <= 30) return { valor: 18, servico: "Entrega São Paulo - Capital", prazo: "2-3 dias úteis" };
+  if (km <= 60) return { valor: 25, servico: "Entrega Região Metropolitana", prazo: "3-4 dias úteis" };
+  return { valor: 35, servico: "Entrega Nacional", prazo: "5-9 dias úteis" };
 }
 
 router.post("/calculate-shipping", async (req, res) => {
   let { customerZipCode } = req.body;
-  if (!customerZipCode) {
-    return res.status(400).json({ error: "CEP ausente" });
-  }
+  if (!customerZipCode) return res.status(400).json({ error: "CEP ausente" });
 
   customerZipCode = customerZipCode.replace(/\D/g, "");
   if (customerZipCode.length !== 8) {
@@ -54,21 +61,20 @@ router.post("/calculate-shipping", async (req, res) => {
   }
 
   try {
-    const customerCoords = await getCoordsByZip(customerZipCode);
-    if (!customerCoords) {
-      return res.status(400).json({ error: "Não foi possível localizar o CEP." });
-    }
+    const address = await getAddressByCep(customerZipCode);
+    if (!address) return res.status(400).json({ error: "CEP não encontrado no ViaCEP" });
 
-    const km = haversine(BASE_COORDS, customerCoords);
+    const coords = await getCoordsByAddress(address);
+    if (!coords) return res.status(400).json({ error: "Não foi possível localizar o endereço no mapa" });
+
+    const km = haversine(BASE_COORDS, coords);
     const frete = calcularFretePorDistancia(km);
 
-    return res.json({ ...frete, distanciaKm: km.toFixed(2) });
+    return res.json({ ...frete, distanciaKm: km.toFixed(2), endereco: address });
   } catch (err) {
     console.error("Erro no cálculo de frete:", err);
     return res.status(500).json({ error: "Falha ao calcular frete" });
   }
 });
-
-
 
 export default router;
