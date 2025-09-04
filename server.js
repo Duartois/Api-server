@@ -137,14 +137,11 @@ app.post('/add-product', async (req, res) => {
 
   // Validação dos campos obrigatórios
   if (!draft) {
-    if (!name || !name.length) return res.json({ alert: 'Precisa adicionar um nome ao produto' });
-    if (!category || !category.length) return res.json({ alert: 'Precisa adicionar uma categoria' });
-    if (!price || !price.length || isNaN(Number(price))) return res.json({ alert: 'Adicione um preço válido' });
-    if (oldPrice && (!oldPrice.length || isNaN(Number(oldPrice)))) return res.json({ alert: 'Adicione um valor antigo válido se aplicável' });
-    if (savePrice && (!savePrice.length || isNaN(Number(savePrice)))) return res.json({ alert: 'Adicione um desconto válido se aplicável' });
-    if (!shortDes || !shortDes.length) return res.json({ alert: 'Precisa adicionar uma curta descrição' });
-    if (!detail || !detail.length) return res.json({ alert: 'Precisa adicionar uma descrição' });
-  }
+  if (!name || !name.length) return res.json({ alert: 'Precisa adicionar um nome ao produto' });
+  if (!category || !category.length) return res.json({ alert: 'Precisa adicionar uma categoria' });
+  if (!price || !price.length || isNaN(Number(price))) return res.json({ alert: 'Adicione um preço válido' });
+  if (!images || !images.length) return res.json({ alert: 'Adicione uma imagem principal' });
+}
 
   if (savePrice && !oldPrice) {
     return res.json({ alert: 'Adicione um valor antigo (oldPrice) se estiver adicionando um desconto (savePrice)' });
@@ -427,6 +424,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
