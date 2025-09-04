@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Stripe precisa do rawBody para verificar a assinatura
 router.post(
-  "/webhook",
+  "/stripe-webhook",
   express.raw({ type: "application/json" }),
   async (req, res) => {
     const sig = req.headers["stripe-signature"];
