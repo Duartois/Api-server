@@ -40,12 +40,13 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 app.use((req, res, next) => {
-  if (req.originalUrl === '/stripe-webhook') {
+  if (req.originalUrl === '/api/stripe-webhook') {
     express.raw({ type: 'application/json' })(req, res, next);
   } else {
     express.json()(req, res, next);
   }
 });
+
 
 app.use("/api", authRoutes);
 app.use("/api", paymentRoutes);
@@ -442,6 +443,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
