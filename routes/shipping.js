@@ -1,89 +1,63 @@
 import express from "express";
 const router = express.Router();
 
-// CEP base Anália Franco
-const BASE_ZIP = "03346030";
+const BASE_ZIP = "03346030"; // Anália Franco
+const BASE_COORDS = { lat: -23.5612, lon: -46.5604 }; // exemplo fixo do CEP base
 
-function calcularFretePorCep(customerZipCode) {
-  // Mesmo CEP (mesma rua) → grátis
-  if (customerZipCode === BASE_ZIP) {
-    return {
-      valor: "Gratis",
-      servico: "Entrega Local",
-      prazo: "Mesmo dia",
-      message: "Frete grátis - mesma rua",
-    };
+// Função para obter coordenadas de um CEP usando Nominatim (OpenStreetMap)
+async function getCoordsByZip(zip) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${zip}&country=Brazil&format=json&limit=1`);
+    const data = await response.json();
+    if (data.length === 0) return null;
+    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+  } catch (err) {
+    console.error("Erro ao buscar coordenadas:", err);
+    return null;
   }
-
-  // Mesmo bairro (prefixo 03346)
-  if (customerZipCode.startsWith("03346")) {
-    return {
-      valor: 10,
-      servico: "Entrega Bairro",
-      prazo: "1 dia útil",
-      message: "Entrega no mesmo bairro",
-    };
-  }
-
-  // Zona Leste (03000–03999)
-  const cepNum = parseInt(customerZipCode, 10);
-  if (cepNum >= 30000 && cepNum <= 39999) {
-    return {
-      valor: 15,
-      servico: "Entrega Zona Leste",
-      prazo: "1-2 dias úteis",
-      message: "Entrega dentro da Zona Leste",
-    };
-  }
-
-  // Outras zonas da capital (01xxx–05xxx e 04xxx etc.)
-  if (
-    customerZipCode.startsWith("01") ||
-    customerZipCode.startsWith("02") ||
-    customerZipCode.startsWith("04") ||
-    customerZipCode.startsWith("05")
-  ) {
-    return {
-      valor: 18,
-      servico: "Entrega São Paulo - Capital",
-      prazo: "2-3 dias úteis",
-      message: "Entrega em outras zonas da capital",
-    };
-  }
-
-  // Região Metropolitana (06xxx–09xxx → Guarulhos, Osasco, ABC, etc.)
-  if (
-    customerZipCode.startsWith("06") ||
-    customerZipCode.startsWith("07") ||
-    customerZipCode.startsWith("08") ||
-    customerZipCode.startsWith("09")
-  ) {
-    return {
-      valor: 25,
-      servico: "Entrega Região Metropolitana",
-      prazo: "3-4 dias úteis",
-      message: "Entrega na Grande São Paulo",
-    };
-  }
-
-  // Brasil (fora de SP)
-  return {
-    valor: 35,
-    servico: "Entrega Nacional",
-    prazo: "5-9 dias úteis",
-    message: "Entrega para outras regiões do Brasil",
-  };
 }
 
-router.post("/calculate-shipping", (req, res) => {
+// Fórmula de Haversine (distância em km)
+function haversine(coord1, coord2) {
+  const R = 6371; // raio da Terra em km
+  const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
+  const dLon = (coord2.lon - coord1.lon) * Math.PI / 180;
+  const lat1 = coord1.lat * Math.PI / 180;
+  const lat2 = coord2.lat * Math.PI / 180;
+
+  const a =
+    Math.sin(dLat/2) ** 2 +
+    Math.sin(dLon/2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// Calcula frete baseado em distância
+function calcularFretePorDistancia(km) {
+  if (km <= 0.5) return { valor: "Gratis", servico: "Entrega Local", prazo: "Mesmo dia", message: "Frete grátis - mesma rua" };
+  if (km <= 3) return { valor: 10, servico: "Entrega Bairro", prazo: "1 dia útil", message: "Entrega no mesmo bairro" };
+  if (km <= 15) return { valor: 15, servico: "Entrega Zona Leste", prazo: "1-2 dias úteis", message: "Entrega dentro da Zona Leste" };
+  if (km <= 30) return { valor: 18, servico: "Entrega São Paulo - Capital", prazo: "2-3 dias úteis", message: "Entrega em outras zonas da capital" };
+  if (km <= 60) return { valor: 25, servico: "Entrega Região Metropolitana", prazo: "3-4 dias úteis", message: "Entrega na Grande São Paulo" };
+  return { valor: 35, servico: "Entrega Nacional", prazo: "5-9 dias úteis", message: "Entrega para outras regiões do Brasil" };
+}
+
+router.post("/calculate-shipping", async (req, res) => {
   const { customerZipCode } = req.body;
 
   if (!customerZipCode || customerZipCode.trim().length !== 8) {
     return res.status(400).json({ error: "CEP inválido. Use 8 dígitos sem traço." });
   }
 
-  const frete = calcularFretePorCep(customerZipCode);
-  return res.json(frete);
+  const customerCoords = await getCoordsByZip(customerZipCode);
+  if (!customerCoords) {
+    return res.status(400).json({ error: "Não foi possível localizar o CEP." });
+  }
+
+  const km = haversine(BASE_COORDS, customerCoords);
+  const frete = calcularFretePorDistancia(km);
+
+  return res.json({ ...frete, distanciaKm: km.toFixed(2) });
 });
 
 export default router;
