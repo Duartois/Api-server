@@ -42,22 +42,33 @@ function calcularFretePorDistancia(km) {
   return { valor: 35, servico: "Entrega Nacional", prazo: "5-9 dias úteis", message: "Entrega para outras regiões do Brasil" };
 }
 
-router.post("/calculate-shipping", (req, res) => {
+router.post("/calculate-shipping", async (req, res) => {
   let { customerZipCode } = req.body;
   if (!customerZipCode) {
     return res.status(400).json({ error: "CEP ausente" });
   }
 
-  // normaliza para só números
   customerZipCode = customerZipCode.replace(/\D/g, "");
-
   if (customerZipCode.length !== 8) {
     return res.status(400).json({ error: "CEP inválido. Use 8 dígitos." });
   }
 
-  const frete = calcularFretePorCep(customerZipCode);
-  return res.json(frete);
+  try {
+    const customerCoords = await getCoordsByZip(customerZipCode);
+    if (!customerCoords) {
+      return res.status(400).json({ error: "Não foi possível localizar o CEP." });
+    }
+
+    const km = haversine(BASE_COORDS, customerCoords);
+    const frete = calcularFretePorDistancia(km);
+
+    return res.json({ ...frete, distanciaKm: km.toFixed(2) });
+  } catch (err) {
+    console.error("Erro no cálculo de frete:", err);
+    return res.status(500).json({ error: "Falha ao calcular frete" });
+  }
 });
+
 
 
 export default router;
