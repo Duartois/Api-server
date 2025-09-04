@@ -1,6 +1,6 @@
 import express from "express";
 import Stripe from "stripe";
-import Order from "../models/Order.js";
+import Order from "../models/order.js";
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
