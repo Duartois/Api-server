@@ -13,7 +13,7 @@ router.post("/get-orders", async (req, res) => {
     if (email) {
       q = query(q, where("email", "==", email), orderBy("createdAt", "desc"));
     } else if (adminId) {
-      q = query(q, where("adminId", "==", adminId), orderBy("createdAt", "desc"));
+      q = query(q, where("adminId", "==", adminId), orderBy("createdAt", "desc"), limit(20));
     }
 
     const snapshot = await getDocs(q);
