@@ -32,9 +32,9 @@ router.post('/register', async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
-    const userData = { ...req.body, password: hash, seller: false };
+    const userData = { ...req.body, password: hash, admin: false };
     await setDoc(doc(users, email), userData);
-    return res.status(201).json({ name: userData.name, email: userData.email, seller: userData.seller });
+    return res.status(201).json({ name: userData.name, email: userData.email, admin: userData.admin });
   } catch (error) {
     console.error('Erro ao registrar usuário:', error);
     return res.status(500).json({ alert: 'Erro ao registrar usuário' });
@@ -84,7 +84,7 @@ router.post('/login', async (req, res) => {
     return res.status(200).json({
       name: data.name || "",
       email,
-      seller: !!data.seller,
+      admin: !!data.admin,
     });
   } catch (error) {
     console.error("[LOGIN] ERROR:", error);
@@ -92,23 +92,17 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
-
-router.get('/seller', (req, res) => {
-  res.sendFile('seller.html', { root: 'public_html' });
-});
-
-router.post('/seller', async (req, res) => {
+router.post('/admin', async (req, res) => {
   try {
     let { name, address, about, number, email } = req.body;
     if (!name.length || !address.length || !about.length || number.length < 10 || isNaN(number)) {
       return res.status(400).json({ alert: 'Informações Incorretas' });
     }
-    const sellers = collection(db, 'sellers');
-    await setDoc(doc(sellers, email), req.body);
+    const admins = collection(db, 'sellers');
+    await setDoc(doc(admins, email), req.body);
     const users = collection(db, 'users');
-    await updateDoc(doc(users, email), { seller: true });
-    return res.json({ seller: true });
+    await updateDoc(doc(users, email), { admin: true });
+    return res.json({ admin: true });
   } catch (error) {
     console.error('Erro ao processar vendedor:', error);
     return res.status(500).json({ alert: 'Erro ao processar o vendedor.' });
