@@ -36,30 +36,30 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// CORS sempre primeiro
+ CORS sempre primeiro
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-// Body parsers (raw/json)
+ Body parsers (rawjson)
 app.use((req, res, next) => {
-  if (req.originalUrl === "/api/stripe-webhook") {
-    express.raw({ type: "application/json" })(req, res, next);
+  if (req.originalUrl === "apistripe-webhook") {
+    express.raw({ type: "applicationjson" })(req, res, next);
   } else {
     express.json()(req, res, next);
   }
 });
 
-// Rotas
-app.use("/api", authRoutes);
-app.use("/api", paymentRoutes);
-app.use("/api", shippingRoutes);
-app.use("/api", ordersRoutes);
-app.use("/api", webhookRoutes);
+ Rotas
+app.use("api", authRoutes);
+app.use("api", paymentRoutes);
+app.use("api", shippingRoutes);
+app.use("api", ordersRoutes);
+app.use("api", webhookRoutes);
 
 
-app.get('/s3url', (req, res) => {
+app.get('s3url', (req, res) => {
   const fileType = req.query.fileType;
-  const allowedTypes = ['image/png', 'image/jpeg'];
+  const allowedTypes = ['imagepng', 'imagejpeg'];
   if (!fileType || !allowedTypes.includes(fileType)) {
     return res.status(400).json({ error: 'Tipo de arquivo inválido ou ausente' });
   }
@@ -71,29 +71,29 @@ app.get('/s3url', (req, res) => {
     });
 });
 
-app.get('/', (req, res) => {
+app.get('', (req, res) => {
   res.sendFile("index.html", { root: "public_html" });
 });
 
-app.get('/products', (req, res) => {
+app.get('products', (req, res) => {
   res.sendFile("product.html", { root: "public_html" });
 });
 
-app.get('/category', (req, res) => {
+app.get('category', (req, res) => {
   res.status(200).json({ message: 'Rota Category válida' });
 });
 
-// Dashboard e demais rotas
-// Dashboard
-app.get('/dashboard', (req, res) => {
+ Dashboard e demais rotas
+ Dashboard
+app.get('dashboard', (req, res) => {
   res.status(200).json({ message: 'Rota Dashboard válida' });
 });
-// Adicionar produto
-app.get('/add-product', (req, res) => {
+/ Adicionar produto
+app.get('/api/add-product', (req, res) => {
   res.sendFile('add-product.html', { root: "public_html"});
 });
 // Rota para editar o produto
-app.get('/add-product-data', async (req, res) => {
+app.get('/api/add-product-data', async (req, res) => {
   const productId = req.query.id;
   console.log("Product ID recebido:", productId);
   const products = collection(db, "products");
@@ -141,7 +141,7 @@ const isPopularProduct = (salesCount) => {
     return salesCount > popularThreshold;
 };
 
-app.post('/add-product', async (req, res) => {
+app.post('/api/add-product', async (req, res) => {
   let { 
     name, shortDes, detail, price, 
     images = [], tags = [], email, draft, 
@@ -239,7 +239,7 @@ const pluralize = (word) => {
         return word + 's';
     }
 };
-app.post('/get-products', async (req, res) => {
+app.post('/api/get-products', async (req, res) => {
   try {
     const { tag, badge, email, searchParam } = req.body;
     const productsCollection = collection(db, "products");
@@ -304,7 +304,7 @@ app.post('/get-products', async (req, res) => {
 });
 
 // Rota para buscar produtos pelo ID
-app.get('/product-data', async (req, res) => {
+app.get('/api/product-data', async (req, res) => {
   const productId = req.query.id; // Obtém o ID do produto da URL
     console.log('ID recebido:', productId);
     const productsCollection = collection(db, "products");
@@ -326,12 +326,12 @@ app.get('/product-data', async (req, res) => {
 
 
 // Rota de busca
-app.get('/category/:key', (req, res) => {
+app.get('/api/category/:key', (req, res) => {
 res.sendFile("category.html", { root: "public_html" });
 });
 
 // Rota para deletar produtos
-app.post('/delete-product', async (req, res) => {
+app.post('/api/delete-product', async (req, res) => {
     const { id } = req.body;
 
     if (!id) {
@@ -349,7 +349,7 @@ app.post('/delete-product', async (req, res) => {
     }
 });
 
-app.post('/add-review', (req, res) => {
+app.post('/api/add-review', (req, res) => {
   let { headline, review, rate, email, product } = req.body;
 
   // Validação dos dados
@@ -381,7 +381,7 @@ app.post('/add-review', (req, res) => {
     });
 });
 
-app.post('/get-reviews', (req, res) => {
+app.post('/api/get-reviews', (req, res) => {
 let { product, email } = req.body;
 let reviews = collection(db, "reviews");
 
@@ -417,20 +417,20 @@ getDocs(query(reviews, where("product", "==", product)), limit(4))
 });
 
 
-app.get('/cart', (req, res) => {
+app.get('/api/cart', (req, res) => {
   res.sendFile("cart.html", { root :"public_html" })
 })
 
-app.get('/checkout', (req, res) => {
+app.get('/api/checkout', (req, res) => {
   res.sendFile("checkout.html", { root : "public_html"})
 })
 
-app.get('/success', (req, res) => {
+app.get('/api/success', (req, res) => {
   console.log("Página de sucesso acessada com session_id:", req.query.session_id);
   res.sendFile("success.html", { root: "public_html"  });
 });
 
-app.get('/404', (req, res) => {
+app.get('/api/404', (req, res) => {
   res.sendFile("404.html", { root: "public_html" });
 });
 
@@ -446,6 +446,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
