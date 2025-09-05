@@ -42,7 +42,7 @@ app.options("*", cors(corsOptions)); // responde preflight
  Body parsers (rawjson)
 app.use((req, res, next) => {
   if (req.originalUrl === "/api/stripe-webhook") {
-    express.raw({ type: "applicationjson" })(req, res, next);
+    express.raw({ type: "application/json" })(req, res, next);
   } else {
     express.json()(req, res, next);
   }
@@ -56,7 +56,7 @@ app.use("/api", ordersRoutes);
 app.use("/api", webhookRoutes);
 
 
-app.get('s3url', (req, res) => {
+app.get('/s3url', (req, res) => {
   const fileType = req.query.fileType;
   const allowedTypes = ['imagepng', 'imagejpeg'];
   if (!fileType || !allowedTypes.includes(fileType)) {
@@ -70,24 +70,23 @@ app.get('s3url', (req, res) => {
     });
 });
 
-app.get('', (req, res) => {
+app.get('/', (req, res) => {
   res.sendFile("index.html", { root: "public_html" });
 });
 
-app.get('products', (req, res) => {
+app.get('/products', (req, res) => {
   res.sendFile("product.html", { root: "public_html" });
 });
 
-app.get('category', (req, res) => {
+app.get('/category', (req, res) => {
   res.status(200).json({ message: 'Rota Category válida' });
 });
 
- Dashboard e demais rotas
- Dashboard
-app.get('dashboard', (req, res) => {
+
+app.get('/dashboard', (req, res) => {
   res.status(200).json({ message: 'Rota Dashboard válida' });
 });
-/ Adicionar produto
+
 app.get('/api/add-product', (req, res) => {
   res.sendFile('add-product.html', { root: "public_html"});
 });
@@ -445,6 +444,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
