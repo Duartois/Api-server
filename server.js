@@ -36,23 +36,26 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// CORS sempre primeiro
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options("*", cors(corsOptions));
 
+// Body parsers (raw/json)
 app.use((req, res, next) => {
-  if (req.originalUrl === '/api/stripe-webhook') {
-    express.raw({ type: 'application/json' })(req, res, next);
+  if (req.originalUrl === "/api/stripe-webhook") {
+    express.raw({ type: "application/json" })(req, res, next);
   } else {
     express.json()(req, res, next);
   }
 });
 
-
+// Rotas
 app.use("/api", authRoutes);
 app.use("/api", paymentRoutes);
 app.use("/api", shippingRoutes);
 app.use("/api", ordersRoutes);
 app.use("/api", webhookRoutes);
+
 
 app.get('/s3url', (req, res) => {
   const fileType = req.query.fileType;
@@ -443,6 +446,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
