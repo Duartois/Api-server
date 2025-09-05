@@ -433,8 +433,12 @@ app.get('/api/404', (req, res) => {
 });
 
 app.use((req, res) => {
-  res.redirect('/404');
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  res.status(404).json({ error: "Not found" });
 });
+
 
 if (process.env.VERCEL !== '1') {
   const port = process.env.PORT || 3000;
@@ -444,6 +448,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
