@@ -17,16 +17,16 @@ router.post("/stripe-checkout", async (req, res) => {
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
       metadata: {
         email,
-        adminId: user.admin ? user.email : "default",
+        adminId: adminId || "default",
         address: JSON.stringify(address || {}),
       },
     });
 
     res.json({ url: session.url });
   } catch (err) {
-  console.error("Erro Stripe Checkout:", err.message, err.stack);
-  res.status(500).json({ error: err.message });
-}
+    console.error("Erro Stripe Checkout:", err.message, err.stack);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
