@@ -29,7 +29,7 @@ router.post("/stripe-webhook", async (req, res) => {
 
       const pedido = {
         email: session.metadata.email,
-        sellerId: session.metadata.sellerId,
+        adminId: session.metadata.adminId,
         address: JSON.parse(session.metadata.address || "{}"),
         products: lineItems.data.map((item) => ({
           name: item.description,
