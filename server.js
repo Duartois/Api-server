@@ -6,7 +6,7 @@ import authRoutes from "./routes/auth.js";
 import paymentRoutes from "./routes/payment.js";
 import shippingRoutes from "./routes/shipping.js";
 import webhookRoutes from "./routes/webhook.js";
-import ordersRoutes from "./routes/orders.js";
+import orderRoutes from "./routes/order.js";
 
 import {
   doc, collection, setDoc, getDoc,
@@ -54,7 +54,7 @@ app.use((req, res, next) => {
 app.use("/api", authRoutes);
 app.use("/api", paymentRoutes);
 app.use("/api", shippingRoutes);
-app.use("/api", ordersRoutes);
+app.use("/api", orderRoutes);
 app.use("/api", webhookRoutes);
 
 // -----------------------------
@@ -344,4 +344,5 @@ function isFeaturedProduct(product) {
 function isPopularProduct(salesCount) {
   return Number(salesCount) > 10;
 }
+
 
