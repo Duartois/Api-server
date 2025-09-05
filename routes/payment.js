@@ -7,7 +7,7 @@ console.log("Stripe key loaded?", process.env.STRIPE_SECRET_KEY ? "YES" : "NO");
 
 router.post("/stripe-checkout", async (req, res) => {
   try {
-    const { items, email, address, sellerId } = req.body;
+    const { items, email, address, adminId } = req.body;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -17,7 +17,7 @@ router.post("/stripe-checkout", async (req, res) => {
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
       metadata: {
         email,
-        sellerId: sellerId || "default",
+        adminId: adminId || "default",
         address: JSON.stringify(address || {}),
       },
     });
