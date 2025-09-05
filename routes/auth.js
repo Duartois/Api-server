@@ -98,7 +98,7 @@ router.post('/admin', async (req, res) => {
     if (!name.length || !address.length || !about.length || number.length < 10 || isNaN(number)) {
       return res.status(400).json({ alert: 'Informações Incorretas' });
     }
-    const admins = collection(db, 'sellers');
+    const admins = collection(db, 'admins');
     await setDoc(doc(admins, email), req.body);
     const users = collection(db, 'users');
     await updateDoc(doc(users, email), { admin: true });
