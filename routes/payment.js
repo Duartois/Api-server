@@ -23,9 +23,9 @@ router.post("/stripe-checkout", async (req, res) => {
 
     res.json({ url: session.url });
   } catch (err) {
-    console.error("Erro Stripe Checkout:", err);
-    res.status(500).json({ error: "Erro ao criar sessão Stripe" });
-  }
+  console.error("Erro Stripe Checkout:", err.message, err.stack);
+  res.status(500).json({ error: err.message });
+}
 });
 
 export default router;
