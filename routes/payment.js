@@ -3,6 +3,7 @@ import Stripe from "stripe";
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+console.log("Stripe key loaded?", process.env.STRIPE_SECRET_KEY ? "YES" : "NO");
 
 router.post("/stripe-checkout", async (req, res) => {
   try {
