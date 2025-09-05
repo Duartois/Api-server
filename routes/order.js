@@ -9,7 +9,7 @@ router.post("/get-orders", async (req, res) => {
     await connectMongo();
     const { email, adminId } = req.body;
 
-    const filter = adminId ? { adminId } : {};
+    const filter = {};
     const orders = await Order.find(filter).sort({ createdAt: -1 }).limit(20);
 
     res.json(orders);
