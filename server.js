@@ -15,30 +15,29 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
-  'http://localhost:5173',
-  'https://www.bichinhosousados.com',
-  'https://bichinhosousados.com',
-  'https://api-server-orcin.vercel.app'
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://www.bichinhosousados.com",
+  "https://bichinhosousados.com",
+  "https://api-server-orcin.vercel.app"
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Permite requests do server (sem origin) e de origens válidas
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
- CORS sempre primeiro
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options("*", cors(corsOptions)); // responde preflight
 
  Body parsers (rawjson)
 app.use((req, res, next) => {
@@ -446,6 +445,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
