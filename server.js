@@ -1,20 +1,6 @@
-// server.js
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import {
-  doc,
-  collection,
-  setDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  deleteDoc,
-  limit,
-} from "firebase/firestore";
-import { db } from "./services/firebase.js";
-import { generateURL } from "./services/s3Service.js";
 
 import authRoutes from "./routes/auth.js";
 import paymentRoutes from "./routes/payment.js";
@@ -22,38 +8,37 @@ import shippingRoutes from "./routes/shipping.js";
 import webhookRoutes from "./routes/webhook.js";
 import ordersRoutes from "./routes/orders.js";
 
+import {
+  doc, collection, setDoc, getDoc,
+  getDocs, query, where, deleteDoc, limit
+} from "firebase/firestore";
+import { db } from "./services/firebase.js";
+import { generateURL } from "./services/s3Service.js";
+
 const app = express();
 
 // -----------------------------
-// CORS
+// 1. CORS no topo
 // -----------------------------
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "https://www.bichinhosousados.com",
   "https://bichinhosousados.com",
-  "https://api-server-orcin.vercel.app",
+  "https://api-server-orcin.vercel.app"
 ];
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  credentials: true,
-  optionsSuccessStatus: 200,
-};
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", allowedOrigins.includes(req.headers.origin) ? req.headers.origin : "");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With");
+  res.header("Access-Control-Allow-Credentials", "true");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 
 // -----------------------------
-// Body parser / webhook
+// 2. Body parser / webhook
 // -----------------------------
 app.use((req, res, next) => {
   if (req.originalUrl === "/api/stripe-webhook") {
@@ -64,7 +49,7 @@ app.use((req, res, next) => {
 });
 
 // -----------------------------
-// Rotas modulares de API
+// 3. Rotas de API
 // -----------------------------
 app.use("/api", authRoutes);
 app.use("/api", paymentRoutes);
@@ -359,3 +344,4 @@ function isFeaturedProduct(product) {
 function isPopularProduct(salesCount) {
   return Number(salesCount) > 10;
 }
+
