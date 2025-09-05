@@ -1,5 +1,6 @@
 import express from "express";
-import Order from "../models/order.js";
+import { db } from "../services/firebase.js";
+import { collection, getDocs, setDoc, doc } from "firebase/firestore";
 
 const router = express.Router();
 
