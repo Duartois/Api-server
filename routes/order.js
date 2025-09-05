@@ -6,14 +6,14 @@ const router = express.Router();
 
 router.post("/get-orders", async (req, res) => {
   try {
-    const { email, sellerId } = req.body;
+    const { email, adminId } = req.body;
 
     let q = collection(db, "orders");
 
     if (email) {
       q = query(q, where("email", "==", email), orderBy("createdAt", "desc"));
-    } else if (sellerId) {
-      q = query(q, where("sellerId", "==", sellerId), orderBy("createdAt", "desc"));
+    } else if (adminId) {
+      q = query(q, where("adminId", "==", adminId), orderBy("createdAt", "desc"));
     }
 
     const snapshot = await getDocs(q);
