@@ -34,8 +34,10 @@ router.post("/stripe-webhook", async (req, res) => {
         products: lineItems.data.map((item) => ({
           name: item.description,
           quantity: item.quantity,
-          price: item.amount_total / 100,
-        })),
+          unitPrice: item.price.unit_amount / 100,
+          subtotal: (item.price.unit_amount / 100) * item.quantity,
+      })),
+
         total: session.amount_total / 100,
         status: session.payment_status,
         stripeSessionId: session.id,
