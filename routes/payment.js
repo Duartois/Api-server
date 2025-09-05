@@ -17,7 +17,7 @@ router.post("/stripe-checkout", async (req, res) => {
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
       metadata: {
         email,
-        adminId: adminId || "default",
+        adminId: user.admin ? user.email : "default",
         address: JSON.stringify(address || {}),
       },
     });
