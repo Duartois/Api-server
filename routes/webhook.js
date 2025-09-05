@@ -1,7 +1,7 @@
 import express from "express";
 import Stripe from "stripe";
-import { db } from "../services/firebase.js";
-import { collection, doc, setDoc } from "firebase/firestore";
+import connectMongo from "../services/mongo.js";
+import Order from "../models/Order.js";
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -11,11 +11,7 @@ router.post("/stripe-webhook", async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error("Webhook signature failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -23,11 +19,11 @@ router.post("/stripe-webhook", async (req, res) => {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-
     try {
+      await connectMongo();
       const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
 
-      const pedido = {
+      await Order.create({
         email: session.metadata.email,
         adminId: session.metadata.adminId,
         address: JSON.parse(session.metadata.address || "{}"),
@@ -36,21 +32,16 @@ router.post("/stripe-webhook", async (req, res) => {
           quantity: item.quantity,
           unitPrice: item.price.unit_amount / 100,
           subtotal: (item.price.unit_amount / 100) * item.quantity,
-      })),
-
+        })),
         total: session.amount_total / 100,
         status: session.payment_status,
         stripeSessionId: session.id,
-        createdAt: new Date().toISOString(),
-      };
+        testMode: !session.livemode,
+      });
 
-      // 🔹 Salva no Firestore (coleção "orders")
-      const orders = collection(db, "orders");
-      await setDoc(doc(orders, session.id), pedido);
-
-      console.log("✅ Pedido salvo no Firestore");
+      console.log("✅ Pedido salvo no MongoDB");
     } catch (err) {
-      console.error("Erro ao salvar pedido:", err);
+      console.error("Erro ao salvar pedido no Mongo:", err);
     }
   }
 
@@ -58,3 +49,4 @@ router.post("/stripe-webhook", async (req, res) => {
 });
 
 export default router;
+
