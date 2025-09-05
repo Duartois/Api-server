@@ -42,7 +42,7 @@ app.options("*", cors(corsOptions));
 
  Body parsers (rawjson)
 app.use((req, res, next) => {
-  if (req.originalUrl === "apistripe-webhook") {
+  if (req.originalUrl === "/api/stripe-webhook") {
     express.raw({ type: "applicationjson" })(req, res, next);
   } else {
     express.json()(req, res, next);
@@ -50,11 +50,11 @@ app.use((req, res, next) => {
 });
 
  Rotas
-app.use("api", authRoutes);
-app.use("api", paymentRoutes);
-app.use("api", shippingRoutes);
-app.use("api", ordersRoutes);
-app.use("api", webhookRoutes);
+app.use("/api", authRoutes);
+app.use("/api", paymentRoutes);
+app.use("/api", shippingRoutes);
+app.use("/api", ordersRoutes);
+app.use("/api", webhookRoutes);
 
 
 app.get('s3url', (req, res) => {
@@ -446,6 +446,7 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+
 
 
 
