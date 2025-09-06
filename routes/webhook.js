@@ -2,6 +2,7 @@ import express from "express";
 import Stripe from "stripe";
 import connectMongo from "../services/mongo.js";
 import Order from "../models/Order.js";
+import getRawBody from "raw-body";
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -11,7 +12,8 @@ router.post("/stripe-webhook", async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    const buf = await getRawBody(req);
+    event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error("Webhook signature failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
