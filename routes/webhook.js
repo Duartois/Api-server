@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import connectMongo from "../services/mongo.js";
 import Order from "../models/Order.js";
 import getRawBody from "raw-body";
+import mongoose from "mongoose";
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -30,9 +31,15 @@ router.post("/stripe-webhook", async (req, res) => {
       let products = [];
       if (session.metadata.products) {
         products = JSON.parse(session.metadata.products);
+        console.log("📡 DB conectado:", mongoose.connection.name);
+        console.log("📦 Salvando pedido:", {
+          email: session.metadata.email,
+          products,
+        });
       }
 
       const order = await Order.create({
+        
         email: session.metadata.email,
         adminId: session.metadata.adminId,
         address: JSON.parse(session.metadata.address || "{}"),
