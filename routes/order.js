@@ -10,6 +10,8 @@ router.post("/get-orders", async (req, res) => {
     const { email, adminId } = req.body;
 
     const filter = {};
+if (adminId) filter.adminId = adminId;
+if (email) filter.email = email;
     const orders = await Order.find(filter).sort({ createdAt: -1 }).limit(20);
 
     res.json(orders);
