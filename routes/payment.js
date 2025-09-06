@@ -19,8 +19,16 @@ router.post("/stripe-checkout", async (req, res) => {
         email,
         adminId: adminId || "default",
         address: JSON.stringify(address || {}),
+        products: JSON.stringify(
+          items.map(i => ({
+            name: i.price_data.product_data.name,
+            quantity: i.quantity,
+            price: i.price_data.unit_amount / 100
+          }))
+        )
       },
     });
+
 
     res.json({ url: session.url });
   } catch (err) {

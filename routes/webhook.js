@@ -19,20 +19,28 @@ router.post("/stripe-webhook", async (req, res) => {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
+
     try {
       await connectMongo();
-      const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+
+      let products = [];
+      if (session.metadata.products) {
+        products = JSON.parse(session.metadata.products);
+      } else {
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+        products = lineItems.data.map((item) => ({
+          name: item.description,
+          quantity: item.quantity,
+          unitPrice: item.price.unit_amount / 100,
+          subtotal: (item.price.unit_amount / 100) * item.quantity,
+        }));
+      }
 
       await Order.create({
         email: session.metadata.email,
         adminId: session.metadata.adminId,
         address: JSON.parse(session.metadata.address || "{}"),
-        products: lineItems.data.map((item) => ({
-          name: item.description,
-          quantity: item.quantity,
-          unitPrice: item.price.unit_amount / 100,
-          subtotal: (item.price.unit_amount / 100) * item.quantity,
-        })),
+        products,
         total: session.amount_total / 100,
         status: session.payment_status,
         stripeSessionId: session.id,
