@@ -14,13 +14,15 @@ router.post("/stripe-webhook", async (req, res) => {
   try {
     const buf = await getRawBody(req);
     event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    console.log("✅ Evento recebido:", event.type);
   } catch (err) {
-    console.error("Webhook signature failed:", err.message);
+    console.error("❌ Webhook signature failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
+    console.log("📦 Session completa:", session.id, session.metadata);
 
     try {
       await connectMongo();
@@ -28,17 +30,9 @@ router.post("/stripe-webhook", async (req, res) => {
       let products = [];
       if (session.metadata.products) {
         products = JSON.parse(session.metadata.products);
-      } else {
-        const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-        products = lineItems.data.map((item) => ({
-          name: item.description,
-          quantity: item.quantity,
-          unitPrice: item.price.unit_amount / 100,
-          subtotal: (item.price.unit_amount / 100) * item.quantity,
-        }));
       }
 
-      await Order.create({
+      const order = await Order.create({
         email: session.metadata.email,
         adminId: session.metadata.adminId,
         address: JSON.parse(session.metadata.address || "{}"),
@@ -49,14 +43,14 @@ router.post("/stripe-webhook", async (req, res) => {
         testMode: !session.livemode,
       });
 
-      console.log("✅ Pedido salvo no MongoDB");
+      console.log("✅ Pedido salvo:", order._id);
     } catch (err) {
-      console.error("Erro ao salvar pedido no Mongo:", err);
+      console.error("❌ Erro ao salvar pedido no Mongo:", err);
     }
   }
 
+  // 🔴 importante: só responder depois do processamento
   res.json({ received: true });
 });
 
 export default router;
-
