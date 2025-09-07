@@ -24,17 +24,30 @@ router.post("/stripe-webhook", async (req, res) => {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     console.log("📦 Session completa:", session.id, session.metadata);
+    let products = [];
+    try {
+      products = JSON.parse(session.metadata?.products || "[]");
+    } catch (err) {
+      console.error(
+        "❌ Erro ao parsear produtos do metadata:",
+        err,
+        session.metadata?.products
+      );
+      products = [];
+    }
+
+    if (products.length === 0) {
+      console.error(
+        "❌ Produtos vazios ou inválidos no metadata. Abortando pedido:",
+        session.id
+      );
+      return res
+        .status(400)
+        .json({ error: "Produtos ausentes ou inválidos na sessão" });
+    }
 
     try {
       await connectMongo();
-
-      const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-      const products = lineItems.data.map(item => ({
-        name: item.description,
-        quantity: item.quantity,
-        unitPrice: (item.price?.unit_amount ?? 0) / 100,
-        subtotal: item.amount_subtotal / 100,
-      }));
 
       console.log("📡 DB conectado:", mongoose.connection.name);
       console.log("📦 Salvando pedido:", {
