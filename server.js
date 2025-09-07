@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-
+import debugRoutes from "./routes/debug.js";
 import authRoutes from "./routes/auth.js";
 import paymentRoutes from "./routes/payment.js";
 import shippingRoutes from "./routes/shipping.js";
@@ -56,6 +56,7 @@ app.use("/api", paymentRoutes);
 app.use("/api", shippingRoutes);
 app.use("/api", orderRoutes);
 app.use("/api", webhookRoutes);
+app.use("/api", debugRoutes);
 
 // -----------------------------
 // S3 upload
