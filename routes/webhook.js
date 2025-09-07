@@ -37,13 +37,24 @@ router.post("/stripe-webhook", async (req, res) => {
     }
 
     if (products.length === 0) {
-      console.error(
-        "❌ Produtos vazios ou inválidos no metadata. Abortando pedido:",
-        session.id
-      );
-      return res
-        .status(400)
-        .json({ error: "Produtos ausentes ou inválidos na sessão" });
+      try {
+        const lineItems = await stripe.checkout.sessions.listLineItems(
+          session.id
+        );
+        products = lineItems.data.map((item) => ({
+          name: item.description,
+          quantity: item.quantity,
+          unitPrice: item.price?.unit_amount
+            ? item.price.unit_amount / 100
+            : 0,
+          subtotal: item.amount_total ? item.amount_total / 100 : 0,
+        }));
+      } catch (err) {
+        console.error(
+          "❌ Erro ao recuperar itens diretamente do Stripe:",
+          err
+        );
+      }
     }
 
     try {
