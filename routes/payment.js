@@ -7,7 +7,7 @@ console.log("Stripe key loaded?", process.env.STRIPE_SECRET_KEY ? "YES" : "NO");
 
 router.post("/stripe-checkout", async (req, res) => {
   try {
-    const { items, email, address, adminId } = req.body;
+    const { items, email, adminId } = req.body;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -18,21 +18,8 @@ router.post("/stripe-checkout", async (req, res) => {
       metadata: {
         email,
         adminId: adminId || "default",
-        address: JSON.stringify(address || {}),
-        products: JSON.stringify(
-          items.map(i => {
-            const unitPrice = i.price_data.unit_amount / 100;
-            return {
-              name: i.price_data.product_data.name,
-              quantity: i.quantity,
-              unitPrice,
-              subtotal: i.quantity * unitPrice,
-            };
-          })
-        )
       },
     });
-
 
     res.json({ url: session.url });
   } catch (err) {

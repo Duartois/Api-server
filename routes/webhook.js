@@ -28,26 +28,24 @@ router.post("/stripe-webhook", async (req, res) => {
     try {
       await connectMongo();
 
-      let products = [];
-      if (session.metadata.products) {
-        products = JSON.parse(session.metadata.products).map(p => ({
-          name: p.name,
-          quantity: p.quantity,
-          unitPrice: p.unitPrice ?? p.price ?? 0,
-          subtotal: p.subtotal ?? p.quantity * (p.unitPrice ?? p.price ?? 0),
-        }));
-        console.log("📡 DB conectado:", mongoose.connection.name);
-        console.log("📦 Salvando pedido:", {
-          email: session.metadata.email,
-          products,
-        });
-      }
+      const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+      const products = lineItems.data.map(item => ({
+        name: item.description,
+        quantity: item.quantity,
+        unitPrice: (item.price?.unit_amount ?? 0) / 100,
+        subtotal: item.amount_subtotal / 100,
+      }));
+
+      console.log("📡 DB conectado:", mongoose.connection.name);
+      console.log("📦 Salvando pedido:", {
+        email: session.metadata.email,
+        products,
+      });
 
       const order = await Order.create({
-        
         email: session.metadata.email,
         adminId: session.metadata.adminId,
-        address: JSON.parse(session.metadata.address || "{}"),
+        address: session.customer_details?.address || {},
         products,
         total: session.amount_total / 100,
         status: session.payment_status,
