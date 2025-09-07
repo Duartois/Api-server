@@ -37,7 +37,8 @@ Crie um arquivo `.env` na raiz do projeto e configure as seguintes variáveis:
 
 ```env
 PORT=3000
-STRIPE_KEY=sua_chave_stripe
+STRIPE_SECRET_KEY=sua_chave_stripe
+MONGO_URI=sua_string_conexao_mongo
 STRIPE_WEBHOOK_SECRET=seu_webhook_secret
 DOMAIN=https://seu_dominio
 AWS_ACCESS_KEY_ID=sua_chave_aws
@@ -62,6 +63,22 @@ npm start
 ```
 
 O servidor estará disponível em `http://localhost:3000`.
+
+## Sincronização de Pedidos com Stripe
+
+Use o script `scripts/syncStripeOrders.js` para sincronizar pedidos do Stripe com o banco de dados.
+
+Execute manualmente:
+
+```
+node scripts/syncStripeOrders.js
+```
+
+Para agendar com cron (exemplo rodando diariamente à meia-noite):
+
+```
+0 0 * * * node /caminho/para/projeto/scripts/syncStripeOrders.js >> /var/log/stripe_sync.log 2>&1
+```
 
 ## Contribuição
 
