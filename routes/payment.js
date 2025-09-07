@@ -9,6 +9,20 @@ router.post("/stripe-checkout", async (req, res) => {
   try {
     const { items, email, adminId } = req.body;
 
+    const products = (items || []).map((item) => {
+      const unitAmount = item?.price_data?.unit_amount || 0;
+      const quantity = item?.quantity || 0;
+      const name =
+        item?.price_data?.product_data?.name || item?.description || "";
+
+      return {
+        name,
+        quantity,
+        unitPrice: unitAmount / 100,
+        subtotal: (unitAmount * quantity) / 100,
+      };
+    });
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: items,
@@ -18,6 +32,7 @@ router.post("/stripe-checkout", async (req, res) => {
       metadata: {
         email,
         adminId: adminId || "default",
+        products: JSON.stringify(products),
       },
     });
 
