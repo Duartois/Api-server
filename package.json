@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "prod": "node server.js"
+    "prod": "node server.js",
+    "sync:orders": "node scripts/syncStripeOrders.js"
   },
   "author": "",
   "license": "ISC",
