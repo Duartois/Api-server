@@ -30,7 +30,12 @@ router.post("/stripe-webhook", async (req, res) => {
 
       let products = [];
       if (session.metadata.products) {
-        products = JSON.parse(session.metadata.products);
+        products = JSON.parse(session.metadata.products).map(p => ({
+          name: p.name,
+          quantity: p.quantity,
+          unitPrice: p.unitPrice ?? p.price ?? 0,
+          subtotal: p.subtotal ?? p.quantity * (p.unitPrice ?? p.price ?? 0),
+        }));
         console.log("📡 DB conectado:", mongoose.connection.name);
         console.log("📦 Salvando pedido:", {
           email: session.metadata.email,

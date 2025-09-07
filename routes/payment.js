@@ -20,11 +20,15 @@ router.post("/stripe-checkout", async (req, res) => {
         adminId: adminId || "default",
         address: JSON.stringify(address || {}),
         products: JSON.stringify(
-          items.map(i => ({
-            name: i.price_data.product_data.name,
-            quantity: i.quantity,
-            price: i.price_data.unit_amount / 100
-          }))
+          items.map(i => {
+            const unitPrice = i.price_data.unit_amount / 100;
+            return {
+              name: i.price_data.product_data.name,
+              quantity: i.quantity,
+              unitPrice,
+              subtotal: i.quantity * unitPrice,
+            };
+          })
         )
       },
     });
