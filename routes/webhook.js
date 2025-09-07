@@ -13,8 +13,7 @@ router.post("/stripe-webhook", async (req, res) => {
   let event;
 
   try {
-    const buf = await getRawBody(req);
-    event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
     console.log("✅ Evento recebido:", event.type);
   } catch (err) {
     console.error("❌ Webhook signature failed:", err.message);
